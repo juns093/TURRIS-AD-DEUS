@@ -1,0 +1,397 @@
+fileFormatVersion: 2
+guid: 05907e02529fc4441bcc8ac75869f33f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1413687553465106251
+    second: PlayerRunEffect_0
+  - first:
+      213: -6087503718934293246
+    second: PlayerRunEffect_1
+  - first:
+      213: 7027226453996499164
+    second: PlayerRunEffect_2
+  - first:
+      213: 2581734106374795688
+    second: PlayerRunEffect_3
+  - first:
+      213: 1896801075212595406
+    second: PlayerRunEffect_4
+  - first:
+      213: -8874085721990916012
+    second: PlayerRunEffect_5
+  - first:
+      213: 7877602409250390292
+    second: PlayerRunEffect_6
+  - first:
+      213: 5232586065790011083
+    second: PlayerRunEffect_7
+  - first:
+      213: 6419403754547075025
+    second: PlayerRunEffect_8
+  - first:
+      213: 1927217962456888219
+    second: PlayerRunEffect_9
+  - first:
+      213: 3921082325438704839
+    second: PlayerRunEffect_10
+  - first:
+      213: 855222239757925124
+    second: PlayerRunEffect_11
+  - first:
+      213: -4858760361975632794
+    second: PlayerRunEffect_12
+  - first:
+      213: 8987315322663354554
+    second: PlayerRunEffect_13
+  - first:
+      213: -7039461812679359151
+    second: PlayerRunEffect_14
+  - first:
+      213: 6772732708368328047
+    second: PlayerRunEffect_15
+  - first:
+      213: -5295113142209163512
+    second: PlayerRunEffect_16
+  - first:
+      213: -7373001709309018069
+    second: PlayerRunEffect_17
+  - first:
+      213: -8758429150905456264
+    second: PlayerRunEffect_18
+  - first:
+      213: 6091140164798547308
+    second: PlayerRunEffect_19
+  - first:
+      213: 4775382979781251554
+    second: PlayerRunEffect_20
+  - first:
+      213: -6496721009512761857
+    second: PlayerRunEffect_21
+  - first:
+      213: -7167166546870257875
+    second: PlayerRunEffect_22
+  - first:
+      213: 4770597606210830772
+    second: PlayerRunEffect_23
+  - first:
+      213: -5714299190008133947
+    second: PlayerRunEffect_24
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: PlayerRunEffect_6
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 0
+        width: 36
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 411812567add25d60800000000000000
+      internalID: 7877602409250390292
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_10
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 0
+        width: 41
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3dcb12b8a50b9864caaea8799e6d8963
+      internalID: 924043016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_12
+      rect:
+        serializedVersion: 2
+        x: 282
+        y: 1
+        width: 32
+        height: 26
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af72d87260958ce45bd07537cfbd6219
+      internalID: -914413535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_14
+      rect:
+        serializedVersion: 2
+        x: 339
+        y: 0
+        width: 37
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3b189412d5d862e47a545bfa6a025d86
+      internalID: -1044395897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_17
+      rect:
+        serializedVersion: 2
+        x: 406
+        y: 0
+        width: 33
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1c11270383fbba24baf0fec816eef5e1
+      internalID: 1904245619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_20
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 0
+        width: 32
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2d3b44d64fdde064c8405b97eff4b74e
+      internalID: 1555335996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_22
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 0
+        width: 35
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a30a609815c9d9f448634e60f06dde93
+      internalID: -191643416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PlayerRunEffect_23
+      rect:
+        serializedVersion: 2
+        x: 470
+        y: 0
+        width: 35
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dca96405f0c497f4a9ef454921ef6f0c
+      internalID: 1713373110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 85f4ee01653b87c4f8a15921caac9a10
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":72.0,"y":48.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      PlayerRunEffect_0: 1413687553465106251
+      PlayerRunEffect_1: -6087503718934293246
+      PlayerRunEffect_10: 924043016
+      PlayerRunEffect_11: 1848426030
+      PlayerRunEffect_12: -914413535
+      PlayerRunEffect_13: 1492963893
+      PlayerRunEffect_14: -1044395897
+      PlayerRunEffect_15: -564349882
+      PlayerRunEffect_16: -452122181
+      PlayerRunEffect_17: 1904245619
+      PlayerRunEffect_18: 2092840922
+      PlayerRunEffect_19: -1165170817
+      PlayerRunEffect_2: 7027226453996499164
+      PlayerRunEffect_20: 1555335996
+      PlayerRunEffect_21: 1601001149
+      PlayerRunEffect_22: -191643416
+      PlayerRunEffect_23: 1713373110
+      PlayerRunEffect_24: 351443047
+      PlayerRunEffect_25: 506394007
+      PlayerRunEffect_26: 1078993066
+      PlayerRunEffect_3: 2581734106374795688
+      PlayerRunEffect_4: 1896801075212595406
+      PlayerRunEffect_5: -8874085721990916012
+      PlayerRunEffect_6: 7877602409250390292
+      PlayerRunEffect_7: -967450646
+      PlayerRunEffect_8: 760097049
+      PlayerRunEffect_9: -1757127158
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
