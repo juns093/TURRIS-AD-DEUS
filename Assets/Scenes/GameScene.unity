@@ -3531,7 +3531,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 6.75
+  orthographic size: 0
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -17371,7 +17371,7 @@ TilemapCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: ac340299915b39648a068f20aaa5a473, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
