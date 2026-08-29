@@ -80,7 +80,7 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private float closeDuration = 0.13f;
 
     [Tooltip("열릴 때 시작 크기. 1보다 작으면 살짝 커지면서 나타난다.")]
-    [Range(0.5f, 1f)] [SerializeField] private float openScaleFrom = 0.93f;
+    [Range(0.5f, 1f)] [SerializeField] private float openScaleFrom = 1;
 
     [Tooltip("진행도(0~1)에 대한 가속 곡선. 끝을 1보다 살짝 올리면 톡 튀었다 자리잡는다.")]
     [SerializeField]
@@ -380,7 +380,7 @@ public class InventoryUI : MonoBehaviour
         }
 
         if (contentRoot != null)
-            contentRoot.localScale = Vector3.one * Mathf.LerpUnclamped(openScaleFrom, 1f, e);
+            contentRoot.localScale = Vector3.one * Mathf.LerpUnclamped(openScaleFrom, 1.22f, e);
     }
 
     private void ApplyInputState(bool open)

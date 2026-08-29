@@ -701,6 +701,7 @@ public class PlayerController : MonoBehaviour
         // 사이드뷰에서 공중에 떠있으면(점프/낙하 포함) true
         bool isJumpingSide = isSide && !isGrounded && !isDodging;
         SetAnimBool("isJumping", isJumpingSide);
+        
 
         bool isRunningSide = isSide && isGrounded && !isDodging && running
             && Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0f;
