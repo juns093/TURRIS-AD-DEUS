@@ -70,12 +70,15 @@ public class InventoryGrid
         if (!CanPlace(item, x, y, item)) return false;
 
         // 이미 격자에 있던 아이템을 옮기는 경우라면 이전 자리를 먼저 비운다.
-        if (items.Contains(item)) Clear(item);
+        // 이때 목록에는 그대로 남겨둬야 한다. 다시 Add 하면 같은 아이템이 목록에 두 번 들어가고,
+        // UI 는 목록을 그대로 순회해서 그리므로 옮길 때마다 아이템이 하나씩 늘어난 것처럼 보인다.
+        bool alreadyListed = items.Contains(item);
+        if (alreadyListed) Clear(item);
 
         Fill(item, x, y);
         item.gridX = x;
         item.gridY = y;
-        items.Add(item);
+        if (!alreadyListed) items.Add(item);
 
         Changed?.Invoke();
         return true;
@@ -86,7 +89,11 @@ public class InventoryGrid
         if (item == null || !items.Contains(item)) return false;
 
         Clear(item);
-        items.Remove(item);
+
+        // 같은 아이템이 목록에 여러 번 들어가 있어도 남김없이 지운다.
+        // (List.Remove 는 첫 번째 하나만 지우므로, 예전 저장 데이터에 중복이 있으면 유령이 남는다)
+        items.RemoveAll(i => i == item);
+
         item.gridX = -1;
         item.gridY = -1;
 
