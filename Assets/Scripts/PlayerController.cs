@@ -18,10 +18,22 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float runSpeed = 6.0f;
 
     [Header("사이드뷰 전용 - 점프")]
+    [Tooltip("점프의 최대 세기. 키를 끝까지 누르고 있었을 때의 높이다.")]
     [SerializeField] private float jumpForce = 12f;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.15f;
     [SerializeField] private LayerMask groundLayer;
+
+    [Header("사이드뷰 전용 - 가변 점프 (누른 시간 = 높이)")]
+    [Tooltip("켜면 점프 키를 누르고 있는 시간에 따라 높이가 달라진다.\n" +
+             "톡 누르면 낮게, 계속 누르고 있으면 Jump Force 높이까지 올라간다.\n" +
+             "끄면 언제나 최대 높이로 뛴다.")]
+    [SerializeField] private bool variableJumpHeight = true;
+
+    [Tooltip("올라가는 도중에 키를 떼면 남겨둘 상승 속도의 비율.\n" +
+             "작을수록 떼는 즉시 뚝 멈춰서 더 낮게 뛴다. 0.4 정도가 무난하다.\n" +
+             "0으로 두면 떼는 순간 상승이 완전히 멈춘다.")]
+    [Range(0f, 1f)] [SerializeField] private float jumpCutMultiplier = 0.4f;
 
     [Header("회피 (양쪽 모드 공용)")]
     [SerializeField] private float dodgeSpeed = 14f;
@@ -116,6 +128,14 @@ public class PlayerController : MonoBehaviour
     // (FixedUpdate에서 직접 GetKeyDown을 읽으면 프레임당 0~여러 번 호출되면서
     //  입력이 씹히거나 중복 처리되어 "랜덤하게 점프되는" 현상이 생긴다.)
     private bool jumpRequested;
+
+    // 점프 키를 지금 "누르고 있는지". 가변 점프에서 키를 뗀 순간을 알아내는 데 쓴다.
+    // GetKeyDown과 달리 순간 이벤트가 아니라 상태라서, Update에서 매 프레임 그대로 덮어써도 안전하다.
+    private bool jumpHeld;
+
+    // 점프해서 아직 올라가는 중인지. 키를 떼는 순간 상승을 한 번 끊어주기 위한 표시로,
+    // 한 번 끊었으면 다음 점프 전까지 false로 둔다. (같은 점프를 여러 번 깎지 않게)
+    private bool jumpRising;
 
     // "바닥에 닿아있는 동안 1번만" 규칙: 점프하면 true로 잠그고,
     // 실제로 착지(false -> true 전이)하는 그 순간에만 다시 false로 풀어준다.
@@ -266,6 +286,9 @@ public class PlayerController : MonoBehaviour
             jumpRequested = true;
         }
 
+        // 누르고 있는지는 매 프레임 그대로 기록해둔다. 가변 점프가 "키를 뗀 순간"을 여기서 안다.
+        jumpHeld = Input.GetKey(jumpKey);
+
         UpdateAnimatorState();
     }
 
@@ -317,6 +340,7 @@ public class PlayerController : MonoBehaviour
         if (isGrounded && !wasGrounded)
         {
             hasJumpedSinceGrounded = false;
+            jumpRising = false; // 착지했으면 깎을 상승분도 없다
         }
 
         if (wallJumpLockTimer > 0f) wallJumpLockTimer -= Time.fixedDeltaTime;
@@ -364,7 +388,10 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             hasJumpedSinceGrounded = true; // 다시 착지하기 전까지는 절대 재점프 불가
             isGrounded = false; // 점프 적용 즉시 false로 만들어서 같은 프레임에 재감지되는 걸 방지
+            jumpRising = true;  // 여기서부터 키를 떼면 상승을 끊는다
         }
+
+        ApplyJumpCut();
 
         FlipSprite();
 
@@ -372,6 +399,34 @@ public class PlayerController : MonoBehaviour
                : h == 0 ? PlayerState.Idle
                : running ? PlayerState.Run
                : PlayerState.Walk;
+    }
+
+    /// <summary>
+    /// 점프 키를 뗀 순간 남아있는 상승 속도를 깎아서 점프를 짧게 끊는다.
+    ///
+    /// 이렇게 하면 "누른 시간 = 높이"가 된다.
+    ///   - 톡 누르고 바로 떼면: 거의 즉시 상승이 끊겨서 낮게 뛴다.
+    ///   - 계속 누르고 있으면: 아무것도 깎지 않으므로 jumpForce 그대로 최대 높이까지 올라간다.
+    ///
+    /// 힘을 누른 시간만큼 "쌓아서" 주는 방식이 아니라, 일단 최대로 뛰고 뗄 때 깎는 방식이다.
+    /// 그래야 키를 누른 즉시 점프가 시작돼서 조작이 굼뜨게 느껴지지 않는다.
+    /// </summary>
+    private void ApplyJumpCut()
+    {
+        if (!variableJumpHeight || !jumpRising) return;
+
+        // 이미 정점을 지나 내려가는 중이면 더 깎을 상승분이 없다.
+        if (rb.linearVelocity.y <= 0f)
+        {
+            jumpRising = false;
+            return;
+        }
+
+        // 아직 누르고 있으면 계속 올라가게 둔다.
+        if (jumpHeld) return;
+
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
+        jumpRising = false; // 한 점프에서 한 번만 깎는다
     }
 
     /// <summary>
@@ -479,6 +534,7 @@ public class PlayerController : MonoBehaviour
 
         wallJumpLockTimer = wallJumpLockTime;
         hasJumpedSinceGrounded = true;
+        jumpRising = true; // 벽 점프도 똑같이 누른 시간만큼 높이가 달라진다
         state = PlayerState.Jump;
 
         SetAnimTrigger(wallJumpTrigger);
@@ -551,6 +607,9 @@ public class PlayerController : MonoBehaviour
         dodgeTimer = dodgeDuration;
         dodgeCooldownTimer = dodgeCooldown;
         state = PlayerState.Dodge;
+
+        // 대시가 수직 속도를 새로 정하므로, 이전 점프의 상승분을 뒤늦게 깎지 않게 여기서 끊는다.
+        jumpRising = false;
 
         // 공중 대시: 중력을 끄고 수직 속도를 지워서 높이를 유지한 채 날아가게 한다.
         // 대시가 끝나면 EndDodge 에서 원래 중력으로 돌려놓는다.
@@ -729,6 +788,8 @@ public class PlayerController : MonoBehaviour
         wallJumpLockTimer = 0f;
         dodgeCooldownTimer = 0f;
         jumpRequested = false;
+        jumpHeld = false;
+        jumpRising = false;
         hasJumpedSinceGrounded = false;
 
         // 회피 연출이 리셋 시점에 걸려있던 상태로 남지 않도록 원복
