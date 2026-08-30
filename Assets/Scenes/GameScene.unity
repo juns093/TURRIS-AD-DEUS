@@ -1455,6 +1455,7 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+<<<<<<< Updated upstream
 --- !u!1 &234896110
 GameObject:
   m_ObjectHideFlags: 0
@@ -1530,6 +1531,8 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 234896110}
   m_CullTransparentMesh: 1
+=======
+>>>>>>> Stashed changes
 --- !u!1 &246766474
 GameObject:
   m_ObjectHideFlags: 0
