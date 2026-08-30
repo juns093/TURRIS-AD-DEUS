@@ -46,6 +46,22 @@ public class SkillManager : MonoBehaviour
     [Tooltip("선택 취소용 빈 영역. 편집 패널 맨 밑에 화면 전체를 덮는 투명 버튼을 깔고 연결하면 된다. 비워도 된다.")]
     [SerializeField] private Button cancelAreaButton;
 
+    [Header("연결 · 스킬 설명창")]
+    [Tooltip("스킬을 고르면 켜지는 설명창 전체. 아무것도 안 고른 상태에서는 꺼진다.")]
+    [SerializeField] private GameObject detailRoot;
+
+    [Tooltip("설명창에 크게 보여줄 스킬 아이콘.")]
+    [SerializeField] private Image detailIcon;
+
+    [Tooltip("스킬 이름. 레거시 Text 와 TextMeshPro 둘 다 받는다.")]
+    [SerializeField] private UILabel detailName = new UILabel();
+
+    [Tooltip("스킬 설명. SkillData 의 Description 이 그대로 들어간다.")]
+    [SerializeField] private UILabel detailDescription = new UILabel();
+
+    [Tooltip("쿨타임 표시. 비워두면 생략된다.")]
+    [SerializeField] private UILabel detailCooldown = new UILabel();
+
     [Header("연출 · 패널 전환")]
     [Tooltip("스킬 패널이 열릴 때 물러날 인벤토리 쪽 패널. 보통 'Inven'.\n" +
              "가운데에서 줄어들며 사라지므로 Pivot 이 (0.5, 0.5) 여야 자연스럽다.")]
@@ -418,6 +434,34 @@ public class SkillManager : MonoBehaviour
         {
             if (slots[i] == null) continue;
             slots[i].SetSelected(SelectedSkill != null && slotAssignments[i] == SelectedSkill);
+        }
+
+        RefreshDetail();
+    }
+
+    /// <summary>고른 스킬의 아이콘·이름·설명을 옆 설명창에 채운다. 고른 게 없으면 창을 닫는다.</summary>
+    private void RefreshDetail()
+    {
+        bool has = SelectedSkill != null;
+
+        if (detailRoot != null) detailRoot.SetActive(has);
+        if (!has) return;
+
+        if (detailIcon != null)
+        {
+            detailIcon.sprite = SelectedSkill.icon;
+            detailIcon.enabled = SelectedSkill.icon != null;
+            detailIcon.preserveAspect = true;
+        }
+
+        if (detailName.IsAssigned) detailName.Set(SelectedSkill.skillName);
+        if (detailDescription.IsAssigned) detailDescription.Set(SelectedSkill.description);
+
+        if (detailCooldown.IsAssigned)
+        {
+            detailCooldown.Set(SelectedSkill.cooldown > 0f
+                ? $"재사용 대기 {SelectedSkill.cooldown:0.#}초"
+                : "재사용 대기 없음");
         }
     }
 

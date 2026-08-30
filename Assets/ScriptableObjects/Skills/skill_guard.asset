@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillID: skill_guard
   skillName: "\uBC29\uC5B4 \uD0DC\uC138"
-  description: 
+  description: "\uC790\uC138\uB97C \uB0AE\uCDB0 \uBC1B\uB294 \uD53C\uD574\uB97C \uC904\uC778\uB2E4.\n\uAC15\uD55C
+    \uACF5\uACA9\uC744 \uB118\uAE38 \uB54C \uC4F4\uB2E4."
   icon: {fileID: -4145045963669099837, guid: dbfc73b00a32c8f4baac2bcd8ce3437c, type: 3}
   cooldown: 8
   skillType: 1

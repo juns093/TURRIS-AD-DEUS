@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillID: skill_leaf
   skillName: "\uC7AC\uC0DD"
-  description: 
+  description: "\uC7A0\uC2DC \uB3D9\uC548 \uCCB4\uB825\uC744 \uC11C\uC11C\uD788 \uD68C\uBCF5\uD55C\uB2E4.\n\uC804\uD22C
+    \uC911 \uC228\uC744 \uACE0\uB97C \uB54C."
   icon: {fileID: -8214538350690820864, guid: f6e45f158d91ed740a78a106726d7c06, type: 3}
   cooldown: 6
   skillType: 2

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillData
   skillID: skill_slash
   skillName: "\uBCA0\uAE30"
-  description: 
+  description: "\uC55E\uC744 \uD06C\uAC8C \uBCA0\uC5B4 \uAC00\uB978\uB2E4.\n\uAC00\uC7A5
+    \uAE30\uBCF8\uC774 \uB418\uB294 \uADFC\uC811 \uACF5\uACA9."
   icon: {fileID: -4181598684658001806, guid: 3645fc0d406026c4e97310fcdf76552f, type: 3}
   cooldown: 1.5
   skillType: 0
