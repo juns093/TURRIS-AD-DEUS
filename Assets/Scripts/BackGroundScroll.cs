@@ -30,6 +30,15 @@ public class BackGroundScroll : MonoBehaviour
     [Tooltip("Player 오브젝트의 Rigidbody2D. 여기서 실제 이동 속도를 읽어온다.")]
     [SerializeField] private Rigidbody2D playerRb;
 
+    [Tooltip("켜면 Rigidbody 속도 대신 플레이어가 실제로 이동한 거리로 스크롤을 계산한다.\n" +
+             "컷신(타임라인)은 물리가 아니라 Transform 을 직접 움직이기 때문에 Rigidbody 속도가 0이다.\n" +
+             "그래서 이걸 꺼두면 컷신 동안 배경이 멈춰 보인다. 평소 조작에서는 두 방식의 결과가 같다.")]
+    [SerializeField] private bool useActualMovement = true;
+
+    [Tooltip("한 프레임에 이만큼(월드 유닛) 넘게 움직였으면 순간이동으로 보고 무시한다.\n" +
+             "씬 이동이나 리스폰으로 좌표가 확 바뀔 때 배경이 튀는 것을 막는다.")]
+    [SerializeField] private float teleportThreshold = 5f;
+
     [Header("좌우 원근감 (패럴랙스)")]
     [Tooltip("1 = 플레이어와 같은 속도로 스크롤 (가장 앞쪽 레이어).\n0에 가까울수록 멀리 있는 배경처럼 느리게 스크롤 (하늘, 먼 산 등)")]
     [Range(0f, 1f)]
@@ -68,6 +77,9 @@ public class BackGroundScroll : MonoBehaviour
     private float initialCameraY;
     private bool hasCameraRef;
 
+    private float lastPlayerX;
+    private bool hasLastPlayerX;
+
     private void Awake()
     {
         if (meshRenderer != null)
@@ -90,16 +102,42 @@ public class BackGroundScroll : MonoBehaviour
     private void Update()
     {
         // ── 좌우 스크롤 (텍스처 UV) ──
-        if (mat != null && playerRb != null)
-        {
-            float playerSpeedX = playerRb.linearVelocity.x;
-            float direction = invertDirection ? -1f : 1f;
-            float scrollAmount = playerSpeedX * parallaxFactor * speedToScrollRatio * direction * Time.deltaTime;
+        if (mat == null || playerRb == null) return;
 
-            Vector2 offset = mat.mainTextureOffset;
-            offset.x += scrollAmount;
-            mat.mainTextureOffset = offset;
+        // 이번 프레임에 플레이어가 실제로 움직인 거리.
+        // 원래는 속도 x 시간으로 구했는데, 그러면 컷신처럼 물리를 안 쓰고 Transform 만
+        // 움직이는 구간에서 속도가 0으로 잡혀 배경이 멈춰버린다.
+        // 위치 변화량을 직접 재면 어느 쪽으로 움직였든 똑같이 반응한다.
+        float moved;
+
+        if (useActualMovement)
+        {
+            float x = playerRb.transform.position.x;
+
+            if (!hasLastPlayerX)
+            {
+                lastPlayerX = x;
+                hasLastPlayerX = true;
+                return; // 첫 프레임은 기준만 잡고 넘어간다
+            }
+
+            moved = x - lastPlayerX;
+            lastPlayerX = x;
+
+            // 순간이동은 이동으로 치지 않는다
+            if (Mathf.Abs(moved) > teleportThreshold) return;
         }
+        else
+        {
+            moved = playerRb.linearVelocity.x * Time.deltaTime;
+        }
+
+        float direction = invertDirection ? -1f : 1f;
+        float scrollAmount = moved * parallaxFactor * speedToScrollRatio * direction;
+
+        Vector2 offset = mat.mainTextureOffset;
+        offset.x += scrollAmount;
+        mat.mainTextureOffset = offset;
     }
 
     private void LateUpdate()
