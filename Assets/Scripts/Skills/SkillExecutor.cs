@@ -49,6 +49,15 @@ public class SkillExecutor : MonoBehaviour
         return remain <= 0f ? 0f : Mathf.Clamp01(remain / skill.cooldown);
     }
 
+    /// <summary>재사용까지 남은 시간(초). 지금 쓸 수 있으면 0. 숫자로 보여줄 때 쓴다.</summary>
+    public float GetCooldownRemaining(SkillData skill)
+    {
+        if (skill == null) return 0f;
+        if (!cooldownEndTime.TryGetValue(skill.skillID, out float end)) return 0f;
+
+        return Mathf.Max(0f, end - Time.time);
+    }
+
     /// <summary>쿨타임이 끝났으면 스킬을 발동시키고 true 를 돌려준다.</summary>
     public bool TryUseSkill(SkillData skill)
     {

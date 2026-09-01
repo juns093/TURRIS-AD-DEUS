@@ -29,6 +29,9 @@ public class SkillSlot : MonoBehaviour, IPointerClickHandler
     [Tooltip("쿨타임 표시용 Image (Image Type = Filled). 비워두면 쿨타임을 표시하지 않는다.")]
     [SerializeField] private Image cooldownOverlay;
 
+    [Tooltip("남은 쿨타임을 초 단위로 보여줄 라벨. 소수 첫째 자리까지 표시된다. 비워두면 숫자를 띄우지 않는다.")]
+    [SerializeField] private UILabel cooldownLabel = new UILabel();
+
     /// <summary>SkillManager 가 배열 순번에 맞춰 자동으로 채워준다.</summary>
     public int SlotIndex { get; private set; }
 
@@ -59,14 +62,26 @@ public class SkillSlot : MonoBehaviour, IPointerClickHandler
         if (selectedHighlight != null) selectedHighlight.SetActive(on);
     }
 
-    /// <summary>ratio 는 0(사용 가능)~1(방금 씀). 0 이하면 오버레이를 꺼준다.</summary>
-    public void SetCooldown(float ratio)
+    /// <summary>
+    /// ratio 는 0(사용 가능)~1(방금 씀), remainingSeconds 는 남은 시간(초).
+    /// 둘 다 0이면 쿨타임 표시를 통째로 감춘다.
+    /// </summary>
+    public void SetCooldown(float ratio, float remainingSeconds = 0f)
     {
-        if (cooldownOverlay == null) return;
-
         bool show = ratio > 0f;
-        cooldownOverlay.gameObject.SetActive(show);
-        if (show) cooldownOverlay.fillAmount = Mathf.Clamp01(ratio);
+
+        if (cooldownOverlay != null)
+        {
+            cooldownOverlay.gameObject.SetActive(show);
+            if (show) cooldownOverlay.fillAmount = Mathf.Clamp01(ratio);
+        }
+
+        if (cooldownLabel.IsAssigned)
+        {
+            cooldownLabel.SetActive(show);
+            // 0.05초 남은 걸 "0.0" 으로 보여주면 다 된 것처럼 보인다. 올림해서 최소 0.1을 유지한다.
+            if (show) cooldownLabel.Set((Mathf.Ceil(remainingSeconds * 10f) / 10f).ToString("0.0"));
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)

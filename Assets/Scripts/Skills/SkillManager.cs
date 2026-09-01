@@ -33,6 +33,13 @@ public class SkillManager : MonoBehaviour
     [Tooltip("전투 중 실행되는 스킬 바. 왼쪽부터 순서대로 0, 1, 2... 번 슬롯이 된다.")]
     [SerializeField] private SkillSlot[] slots;
 
+    [Tooltip("각 슬롯을 발동시킬 단축키. 위 Slots 와 순서가 1:1로 대응한다.\n" +
+             "슬롯보다 적게 넣어도 되고, 그 경우 키가 없는 슬롯은 클릭으로만 쓴다.")]
+    [SerializeField] private KeyCode[] slotKeys = { KeyCode.Alpha1, KeyCode.Alpha2 };
+
+    [Tooltip("키패드 숫자(1,2...)도 같이 받을지.")]
+    [SerializeField] private bool alsoAcceptKeypad = true;
+
     [Header("연결 · 편집 패널")]
     [Tooltip("스킬 배치 화면 전체를 담은 오브젝트. 평소엔 꺼져 있어야 한다.")]
     [SerializeField] private GameObject editPanelRoot;
@@ -166,12 +173,16 @@ public class SkillManager : MonoBehaviour
 
         if (SkillExecutor.Instance == null || slots == null) return;
 
+        HandleSlotHotkeys();
+
         for (int i = 0; i < slots.Length; i++)
         {
             SkillData skill = slotAssignments[i];
             if (skill == null || skill.cooldown <= 0f) continue;
 
-            slots[i].SetCooldown(SkillExecutor.Instance.GetCooldownRatio(skill));
+            slots[i].SetCooldown(
+                SkillExecutor.Instance.GetCooldownRatio(skill),
+                SkillExecutor.Instance.GetCooldownRemaining(skill));
         }
     }
 
@@ -399,6 +410,46 @@ public class SkillManager : MonoBehaviour
         Deselect();
         RefreshSlotsUI();
         Save();
+    }
+
+    /// <summary>
+    /// 1, 2 ... 숫자키로 해당 슬롯의 스킬을 쓴다.
+    /// 편집 중이거나 인벤토리가 열려 있으면 무시한다.
+    /// (편집 중에 키를 누르면 배치하려던 스킬이 그냥 발동돼버리고,
+    ///  인벤토리는 게임을 멈춰둔 상태라 그때 스킬이 나가면 안 된다)
+    /// </summary>
+    private void HandleSlotHotkeys()
+    {
+        if (IsEditing) return;
+        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen) return;
+        if (slotKeys == null) return;
+
+        int count = Mathf.Min(slotKeys.Length, slots.Length);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (slotKeys[i] == KeyCode.None) continue;
+            if (!WasPressed(slotKeys[i])) continue;
+
+            UseSlot(i);
+            break; // 한 프레임에 여러 스킬이 동시에 나가지 않게
+        }
+    }
+
+    /// <summary>상단 숫자키와 키패드 숫자키를 같은 것으로 취급한다.</summary>
+    private bool WasPressed(KeyCode key)
+    {
+        if (Input.GetKeyDown(key)) return true;
+        if (!alsoAcceptKeypad) return false;
+
+        // Alpha1..Alpha9 을 대응하는 Keypad1..Keypad9 로 바꿔서 한 번 더 본다
+        if (key >= KeyCode.Alpha1 && key <= KeyCode.Alpha9)
+        {
+            KeyCode pad = KeyCode.Keypad1 + (key - KeyCode.Alpha1);
+            return Input.GetKeyDown(pad);
+        }
+
+        return false;
     }
 
     private void UseSlot(int index)

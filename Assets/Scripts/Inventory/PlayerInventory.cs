@@ -231,6 +231,30 @@ public class PlayerInventory : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 같은 종류의 두 장착칸 내용을 맞바꾼다. (무기 1 <-> 무기 2)
+    /// 한쪽이 비어 있어도 그대로 자리만 바뀐다. 둘 다 비었으면 아무 일도 없다.
+    /// </summary>
+    /// <returns>실제로 바뀌었으면 true.</returns>
+    public bool SwapEquipped(ItemType slotType, int a, int b)
+    {
+        ItemInstance[] slots = SlotArrayFor(slotType);
+        if (slots == null) return false;
+        if (a == b) return false;
+        if (a < 0 || b < 0 || a >= slots.Length || b >= slots.Length) return false;
+        if (slots[a] == null && slots[b] == null) return false;
+
+        ItemInstance tmp = slots[a];
+        slots[a] = slots[b];
+        slots[b] = tmp;
+
+        // 장착 구성이 그대로라 총합 스탯은 안 바뀌지만, 나중에 "든 무기만 적용" 식으로
+        // 규칙이 바뀔 수 있으니 여기서도 다시 계산해 둔다.
+        Recalculate();
+        EquipmentChanged?.Invoke();
+        return true;
+    }
+
     public ItemInstance GetEquipped(ItemType slotType, int slotIndex)
     {
         ItemInstance[] slots = SlotArrayFor(slotType);

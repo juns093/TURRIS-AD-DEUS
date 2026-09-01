@@ -40,6 +40,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dodgeDuration = 0.18f;
     [SerializeField] private float dodgeCooldown = 0.9f;
 
+    [Header("회피 - 스테미나")]
+    // 이 클래스 안에는 이동 상태를 나타내는 private enum PlayerState 가 따로 있어서
+    // 그냥 PlayerState 라고 쓰면 그 enum 으로 해석된다. global:: 을 붙여 컴포넌트 쪽을 가리킨다.
+    [Tooltip("스테미나를 관리하는 컴포넌트. 비워두면 같은 오브젝트에서 자동으로 찾는다.")]
+    [SerializeField] private global::PlayerState playerState;
+
+    [Tooltip("회피 한 번에 소모할 스테미나. 0이면 스테미나를 쓰지 않는다.")]
+    [SerializeField] private float dodgeStaminaCost = 25f;
+
     [Tooltip("회피 진행도(0~1)에 따른 속도 배율. 기본값은 초반에 빠르게 튀어나갔다가 급격히 감속하는 커브.")]
     [SerializeField]
     private AnimationCurve dodgeSpeedCurve = new AnimationCurve(
@@ -114,6 +123,13 @@ public class PlayerController : MonoBehaviour
     public bool IsGrounded => isGrounded;
     /// <summary>회피(러쉬) 중인지.</summary>
     public bool IsDodging => isDodging;
+
+    /// <summary>회피 재사용까지 남은 시간(초). 0이면 지금 쓸 수 있다. HUD 표시용.</summary>
+    public float DodgeCooldownRemaining => Mathf.Max(0f, dodgeCooldownTimer);
+    /// <summary>회피 쿨타임 전체 길이(초). 게이지 비율을 낼 때 분모로 쓴다.</summary>
+    public float DodgeCooldownDuration => dodgeCooldown;
+    /// <summary>회피 한 번에 드는 스테미나. HUD에서 "쓸 수 있는지" 표시할 때 쓴다.</summary>
+    public float DodgeStaminaCost => dodgeStaminaCost;
     /// <summary>회피(러쉬)가 시작되는 순간 1회 발생. 이펙트/사운드 트리거용.</summary>
     public event System.Action OnDodgeStart;
 
@@ -221,6 +237,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         CacheAnimatorParameters();
 
+        if (playerState == null) playerState = GetComponent<global::PlayerState>();
+
         // 인스펙터에서 안 꽂아둔 경우가 많다. flipX 반전과 회피 중 알파 연출이 둘 다 이걸 쓴다.
         if (sprite == null) sprite = GetComponent<SpriteRenderer>();
         if (sprite == null) sprite = GetComponentInChildren<SpriteRenderer>();
@@ -274,9 +292,12 @@ public class PlayerController : MonoBehaviour
             if (dodgeTimer <= 0f) EndDodge();
         }
 
+        // 스테미나가 모자라면 쿨타임이 다 돌았어도 회피할 수 없다.
+        // TryConsume 은 성공했을 때만 실제로 깎으므로, 여기서 바로 호출해도 헛되이 소모되지 않는다.
         if (Input.GetKeyDown(dodgeKey) && !isDodging && dodgeCooldownTimer <= 0f)
         {
-            StartDodge();
+            if (playerState == null || dodgeStaminaCost <= 0f || playerState.TryConsume(dodgeStaminaCost))
+                StartDodge();
         }
 
         // 점프도 반드시 Update에서 폴링. 실제로 뛸 수 있는지는 FixedUpdate 쪽에서
