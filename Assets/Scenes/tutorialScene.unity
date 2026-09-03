@@ -859,8 +859,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 90, y: 5}
-  m_SizeDelta: {x: -320, y: -170}
+  m_AnchoredPosition: {x: 150.53639, y: 5}
+  m_SizeDelta: {x: -682.9272, y: -170}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &203334952
 GameObject:
@@ -10528,6 +10528,7 @@ RectTransform:
   - {fileID: 2015628845}
   - {fileID: 324605621}
   - {fileID: 161412747}
+  - {fileID: 2109411944}
   m_Father: {fileID: 2007834605}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -12895,6 +12896,7 @@ GameObject:
   - component: {fileID: 1059211350}
   - component: {fileID: 1059211349}
   - component: {fileID: 1059211348}
+  - component: {fileID: 1059211352}
   m_Layer: 5
   m_Name: Canvas_World
   m_TagString: Untagged
@@ -12990,6 +12992,20 @@ RectTransform:
   m_AnchoredPosition: {x: 960, y: 540}
   m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1059211352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059211347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2486b44fa2096224cbee3ff34baeb3eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HideWhenInventoryOpen
+  hideMode: 0
+  keepRaycastsWhileHidden: 0
 --- !u!1 &1064125222
 GameObject:
   m_ObjectHideFlags: 0
@@ -13276,6 +13292,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 300a88e25094fe34eba613a14e7081a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkillManager
+  persistAcrossScenes: 1
   allSkills:
   - {fileID: 11400000, guid: b998bbe7de4f5d844a2d43e2e32981e4, type: 2}
   - {fileID: 11400000, guid: 1c7d563d65ec03245b41318e2bd6f4e6, type: 2}
@@ -13292,6 +13309,13 @@ MonoBehaviour:
   openButton: {fileID: 1658836072}
   doneButton: {fileID: 324605624}
   cancelAreaButton: {fileID: 6361711}
+  editSlotParent: {fileID: 2109411944}
+  editSlotSize: {x: 130, y: 130}
+  editSlotScale: 1
+  restrictEditToScenes: 1
+  editableScenes:
+  - RestScene
+  debugEditAnywhere: 1
   detailRoot: {fileID: 161412746}
   detailIcon: {fileID: 1330507801}
   detailName:
@@ -66261,6 +66285,7 @@ GameObject:
   - component: {fileID: 1360297953}
   - component: {fileID: 1360297954}
   - component: {fileID: 1360297955}
+  - component: {fileID: 1360297956}
   m_Layer: 5
   m_Name: CanvasPlayer
   m_TagString: Untagged
@@ -66423,6 +66448,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PersistentUI
   id: PlayerHUD
   ensureEventSystem: 1
+--- !u!114 &1360297956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360297948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2486b44fa2096224cbee3ff34baeb3eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HideWhenInventoryOpen
+  hideMode: 0
+  keepRaycastsWhileHidden: 0
 --- !u!1 &1364478156
 GameObject:
   m_ObjectHideFlags: 0
@@ -71023,7 +71062,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 70, y: 0}
+  m_AnchoredPosition: {x: 300, y: 0}
   m_SizeDelta: {x: 150, y: -160}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &2015628846
@@ -71218,6 +71257,7 @@ MonoBehaviour:
   - {fileID: 388747443}
   blurImage: {fileID: 423874798}
   dimImage: {fileID: 869729838}
+  hideWhileOpen: []
   attackLabel:
     legacy: {fileID: 543335325}
     tmp: {fileID: 0}
@@ -71597,6 +71637,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2098891755}
   m_CullTransparentMesh: 1
+--- !u!1 &2109411943
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2109411944}
+  - component: {fileID: 2109411945}
+  m_Layer: 5
+  m_Name: SkillSlotColumn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2109411944
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2109411943}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 588468301}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 70, y: 0}
+  m_SizeDelta: {x: 170, y: -160}
+  m_Pivot: {x: 0, y: 0.5}
+--- !u!114 &2109411945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2109411943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.VerticalLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 8
+    m_Bottom: 8
+  m_ChildAlignment: 1
+  m_Spacing: 24
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 1
+  m_ChildControlHeight: 1
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
 --- !u!1 &2113949641
 GameObject:
   m_ObjectHideFlags: 0

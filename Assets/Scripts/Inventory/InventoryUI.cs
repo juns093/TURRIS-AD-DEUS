@@ -61,6 +61,12 @@ public class InventoryUI : MonoBehaviour
     [Tooltip("블러 위에 덧씌울 검은 막 Image.")]
     [SerializeField] private Image dimImage;
 
+    [Header("연결 · 열려 있는 동안 숨길 UI")]
+    [Tooltip("인벤토리가 열려 있는 동안 꺼둘 UI 오브젝트. 닫으면 다시 켜진다.\n" +
+             "씬을 넘어 살아남는 HUD 처럼 여기에 직접 끌어다 놓기 어려운 것은, 그쪽에 " +
+             "HideWhenInventoryOpen 을 붙여두면 알아서 같이 숨는다.")]
+    [SerializeField] private GameObject[] hideWhileOpen;
+
     [Header("연결 · 스탯 라벨 (선택)")]
     [SerializeField] private UILabel attackLabel = new UILabel();
     [SerializeField] private UILabel defenseLabel = new UILabel();
@@ -99,6 +105,10 @@ public class InventoryUI : MonoBehaviour
 
     // ---- 내부 ----
     public bool IsOpen { get; private set; }
+
+    /// <summary>지금 다른 UI 를 숨겨둔 상태인지. 닫히는 연출이 끝날 때까지 true 로 유지된다.</summary>
+    public bool OtherUIHidden { get; private set; }
+
     public RectTransform DragLayer => dragLayer;
     public Vector2 DragGrabOffset { get; private set; }
     public Camera UICamera { get; private set; }
@@ -178,6 +188,10 @@ public class InventoryUI : MonoBehaviour
     private void OnDestroy()
     {
         Unbind();
+
+        // 숨겨둔 UI 를 켜줄 사람이 사라지므로 여기서 되돌린다.
+        SetOtherUIVisible(true);
+
         if (Instance == this) Instance = null;
     }
 
@@ -311,6 +325,9 @@ public class InventoryUI : MonoBehaviour
 
     private IEnumerator OpenRoutine()
     {
+        // 반드시 화면을 찍기 "전에" 꺼야 한다. HUD 가 켜진 채로 찍히면 흐려진 HUD 가 배경에 그대로 남는다.
+        SetOtherUIVisible(false);
+
         // 완전히 닫혀 있던 상태에서만 화면을 새로 찍는다. UI 를 켜기 전에 찍어야 자기 자신이 안 찍힌다.
         if (openProgress <= 0.001f)
         {
@@ -345,7 +362,26 @@ public class InventoryUI : MonoBehaviour
 
         panelRoot.SetActive(false);
         ApplyInputState(false); // 연출이 끝난 뒤에 게임을 다시 흐르게 한다
+        SetOtherUIVisible(true);
         transition = null;
+    }
+
+    /// <summary>
+    /// 인벤토리 밖의 UI(HUD 등)를 한꺼번에 껐다 켠다.
+    /// 인벤토리를 여는 동안 HUD 가 흐린 배경에 찍히는 것을 막는 게 목적이다.
+    /// </summary>
+    private void SetOtherUIVisible(bool visible)
+    {
+        if (OtherUIHidden == !visible) return;
+        OtherUIHidden = !visible;
+
+        if (hideWhileOpen != null)
+        {
+            foreach (GameObject go in hideWhileOpen)
+                if (go != null) go.SetActive(visible);
+        }
+
+        HideWhenInventoryOpen.SetAllVisible(visible);
     }
 
     /// <summary>게임이 멈춰 있어도 돌아가야 하므로 unscaled 시간을 쓴다.</summary>

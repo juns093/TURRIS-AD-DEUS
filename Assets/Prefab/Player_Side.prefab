@@ -407,9 +407,13 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  variableJumpHeight: 1
+  jumpCutMultiplier: 0.4
   dodgeSpeed: 14
   dodgeDuration: 0.6
   dodgeCooldown: 1
+  playerState: {fileID: 1242739792909591961}
+  dodgeStaminaCost: 25
   dodgeSpeedCurve:
     serializedVersion: 2
     m_Curve:
@@ -443,6 +447,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  dodgeIgnoresGravity: 1
   sprite: {fileID: 6597952066483063240}
   dodgeAlpha: 0.5
   dodgeTrail: {fileID: 6296604615253218142}
@@ -731,5 +736,5 @@ TrailRenderer:
     generateLightingData: 0
   m_MinVertexDistance: 0
   m_Autodestruct: 0
-  m_Emitting: 1
+  m_Emitting: 0
   m_ApplyActiveColorSpace: 1

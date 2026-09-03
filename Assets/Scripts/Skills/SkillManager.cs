@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -17,6 +18,12 @@ using UnityEngine.UI;
 public class SkillManager : MonoBehaviour
 {
     public static SkillManager Instance { get; private set; }
+
+    [Header("싱글톤")]
+    [Tooltip("켜면 씬이 바뀌어도 살아남는다. 이 스크립트가 붙은 오브젝트가 하이어라키 최상위여야 한다.\n" +
+             "HUD 의 스킬바와 인벤토리 UI 는 이미 씬을 넘어 유지되므로, 이것도 같이 유지해야 " +
+             "다른 씬에서 스킬바가 먹통이 되지 않는다.")]
+    [SerializeField] private bool persistAcrossScenes = true;
 
     [Header("스킬 데이터")]
     [Tooltip("스킬 목록에 나열할 전체 스킬. Project 에서 Nibo/Skill 로 만든 에셋을 끌어다 놓는다.")]
@@ -52,6 +59,31 @@ public class SkillManager : MonoBehaviour
 
     [Tooltip("선택 취소용 빈 영역. 편집 패널 맨 밑에 화면 전체를 덮는 투명 버튼을 깔고 연결하면 된다. 비워도 된다.")]
     [SerializeField] private Button cancelAreaButton;
+
+    [Header("연결 · 편집 중 슬롯 자리")]
+    [Tooltip("편집 모드일 때 스킬 슬롯을 잠깐 옮겨올 자리. 스킬 패널 왼쪽에 VerticalLayoutGroup 을 붙인 " +
+             "빈 오브젝트를 만들어 연결한다.\n" +
+             "비워두면 슬롯이 게임 화면의 스킬바 자리에 그대로 남는다. (지금까지의 동작)\n" +
+             "편집이 끝나면 슬롯은 원래 있던 부모·위치·크기로 정확히 되돌아간다.")]
+    [SerializeField] private RectTransform editSlotParent;
+
+    [Tooltip("편집 자리에 들어갔을 때 슬롯 한 칸의 크기. LayoutElement 로 강제한다.\n" +
+             "x 나 y 가 0 이하면 그 축은 건드리지 않고 원래 크기를 쓴다.")]
+    [SerializeField] private Vector2 editSlotSize = new Vector2(120f, 120f);
+
+    [Tooltip("편집 자리에서의 슬롯 배율. HUD 와 패널의 캔버스 배율이 달라서 커/작아 보이면 여기서 맞춘다.")]
+    [SerializeField] private float editSlotScale = 1f;
+
+    [Header("편집 가능 씬")]
+    [Tooltip("켜면 아래 목록에 적힌 씬에서만 스킬을 바꿀 수 있다. 다른 씬에서는 여는 버튼이 아예 사라진다.")]
+    [SerializeField] private bool restrictEditToScenes = true;
+
+    [Tooltip("스킬 배치를 허용할 씬 이름. 확장자 없이 씬 이름만 적는다. (예: RestScene)")]
+    [SerializeField] private string[] editableScenes = { "RestScene" };
+
+    [Tooltip("디버그용. 켜면 위 씬 제한을 무시하고 어느 씬에서든 스킬을 바꿀 수 있다.\n" +
+             "테스트할 때만 켜고, 빌드 전에는 반드시 끌 것. 켜져 있으면 시작할 때 Console 에 경고가 뜬다.")]
+    [SerializeField] private bool debugEditAnywhere = false;
 
     [Header("연결 · 스킬 설명창")]
     [Tooltip("스킬을 고르면 켜지는 설명창 전체. 아무것도 안 고른 상태에서는 꺼진다.")]
@@ -99,12 +131,47 @@ public class SkillManager : MonoBehaviour
     public bool IsEditing { get; private set; }
     public SkillData SelectedSkill { get; private set; }
 
+    /// <summary>지금 씬에서 스킬 배치를 바꿀 수 있는지. 여는 버튼의 표시 여부도 이 값을 따른다.</summary>
+    public bool CanEditHere
+    {
+        get
+        {
+            if (debugEditAnywhere) return true;
+            if (!restrictEditToScenes) return true;
+            if (editableScenes == null || editableScenes.Length == 0) return false;
+
+            string current = SceneManager.GetActiveScene().name;
+
+            foreach (string sceneName in editableScenes)
+                if (!string.IsNullOrEmpty(sceneName) && sceneName == current) return true;
+
+            return false;
+        }
+    }
+
     private SkillData[] slotAssignments;
     private readonly List<SkillItem> listItems = new List<SkillItem>();
 
     private Sequence transition;
     private Vector3 inventoryBaseScale = Vector3.one;
     private Vector3 skillBaseScale = Vector3.one;
+
+    /// <summary>편집 자리로 옮기기 전의 슬롯 상태. 되돌릴 때 이 값을 그대로 다시 씌운다.</summary>
+    private struct SlotHome
+    {
+        public Transform parent;
+        public int siblingIndex;
+        public Vector2 anchorMin;
+        public Vector2 anchorMax;
+        public Vector2 pivot;
+        public Vector2 anchoredPosition;
+        public Vector2 sizeDelta;
+        public Vector3 localScale;
+        public LayoutElement addedLayout; // 우리가 붙인 것만 기억했다가 되돌릴 때 뗀다
+    }
+
+    private SlotHome[] slotHomes;
+    private bool slotsMoved;
 
     // ================= 수명주기 =================
     private void Awake()
@@ -117,7 +184,18 @@ public class SkillManager : MonoBehaviour
 
         Instance = this;
 
+        if (persistAcrossScenes)
+        {
+            if (transform.parent != null)
+            {
+                Debug.LogWarning("[SkillManager] 씬을 넘어 유지하려면 최상위 오브젝트여야 합니다. 부모에서 분리합니다.", this);
+                transform.SetParent(null, true);
+            }
+            DontDestroyOnLoad(gameObject);
+        }
+
         slotAssignments = new SkillData[slots != null ? slots.Length : 0];
+        slotHomes = new SlotHome[slotAssignments.Length];
 
         for (int i = 0; i < slots.Length; i++)
         {
@@ -135,7 +213,43 @@ public class SkillManager : MonoBehaviour
 
         if (editPanelRoot != null) editPanelRoot.SetActive(false);
 
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+
+        if (debugEditAnywhere)
+            Debug.LogWarning("[SkillManager] Debug Edit Anywhere 가 켜져 있습니다. 아무 씬에서나 스킬을 바꿀 수 있습니다. 빌드 전에 끄세요.", this);
+
         RefreshSlotsUI();
+        RefreshOpenButton();
+    }
+
+    /// <summary>
+    /// 인스펙터에서 값을 바꾸는 즉시 반영한다.
+    /// 플레이 도중에 Debug Edit Anywhere 를 껐다 켰다 해도 버튼이 바로 나타나고 사라진다.
+    /// </summary>
+    private void OnValidate()
+    {
+        if (!Application.isPlaying) return;
+        if (Instance != this) return;
+
+        RefreshOpenButton();
+    }
+
+    /// <summary>
+    /// 씬이 바뀌면 여는 버튼의 표시 여부를 다시 판단한다.
+    /// 편집 중에 씬이 넘어가는 일은 없어야 하지만, 혹시 그렇게 되면 슬롯이 스킬 패널에 남은 채로
+    /// 게임이 진행되므로 즉시 원상복구한다.
+    /// </summary>
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (IsEditing) ResetToInventoryInstant();
+        RefreshOpenButton();
+    }
+
+    /// <summary>휴식처가 아닌 씬에서는 스킬 배치로 들어가는 버튼을 아예 감춘다.</summary>
+    private void RefreshOpenButton()
+    {
+        if (openButton == null) return;
+        openButton.gameObject.SetActive(CanEditHere);
     }
 
     /// <summary>
@@ -189,6 +303,13 @@ public class SkillManager : MonoBehaviour
     private void OnDestroy()
     {
         transition?.Kill();
+
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+
+        // 슬롯은 이 스크립트보다 오래 사는 HUD 소속이다. 편집 자리에 둔 채로 사라지면
+        // 스킬바가 통째로 빈 것처럼 보이므로 반드시 제자리에 돌려놓고 나간다.
+        RestoreSlotsHome();
+
         if (Instance == this) Instance = null;
     }
 
@@ -212,7 +333,17 @@ public class SkillManager : MonoBehaviour
     public void OpenEditMode()
     {
         if (IsEditing) return;
+
+        if (!CanEditHere)
+        {
+            Debug.Log("[SkillManager] 이 씬에서는 스킬을 바꿀 수 없습니다. 휴식처에서만 가능합니다.", this);
+            return;
+        }
+
         IsEditing = true;
+
+        // 슬롯을 먼저 옮겨놓고 연출을 시작해야, 패널이 나타날 때 이미 제자리에 정렬돼 있다.
+        MoveSlotsToEditArea();
 
         RefreshSlotsUI();
         RefreshSelectionVisuals();
@@ -285,6 +416,9 @@ public class SkillManager : MonoBehaviour
                 ApplyState(inventoryGroup, inventoryPanel, 1f, inventoryBaseScale);
                 SetInteractive(inventoryGroup, true);
 
+                // 슬롯은 연출이 다 끝난 뒤에 돌려보낸다. 사라지는 도중에 옮기면 눈앞에서 튀어 보인다.
+                RestoreSlotsHome();
+
                 // 다음에 열릴 때 어차피 다시 세팅하지만, 꺼둔 패널을 깨끗한 상태로 남겨둔다.
                 ApplyState(skillGroup, skillPanel, 1f, skillBaseScale);
                 editPanelRoot.SetActive(false);
@@ -302,6 +436,8 @@ public class SkillManager : MonoBehaviour
         IsEditing = false;
         SelectedSkill = null;
 
+        RestoreSlotsHome();
+
         ApplyState(inventoryGroup, inventoryPanel, 1f, inventoryBaseScale);
         SetInteractive(inventoryGroup, true);
 
@@ -309,6 +445,126 @@ public class SkillManager : MonoBehaviour
         if (editPanelRoot != null) editPanelRoot.SetActive(false);
 
         RefreshSelectionVisuals();
+    }
+
+    // ================= 편집 중 슬롯 자리 옮기기 =================
+    /// <summary>
+    /// 스킬 슬롯을 게임 화면의 스킬바에서 편집 패널 안(사진의 왼쪽 세로줄)으로 옮긴다.
+    ///
+    /// 슬롯을 복제하지 않고 원본을 그대로 옮기는 이유:
+    /// 슬롯에는 SkillManager 가 물려준 인덱스와 클릭 처리, 쿨타임 표시가 전부 들어있다.
+    /// 복제본을 만들면 그 상태를 양쪽에서 따로 관리해야 해서 어긋나기 쉽다.
+    ///
+    /// 대신 원래 부모·순서·앵커·크기·배율을 통째로 기억해뒀다가 편집이 끝나면 그대로 되돌린다.
+    /// (HUD 캔버스와 인벤토리 캔버스는 배율이 서로 달라서, 이 값들을 안 되돌리면 스킬바가 찌그러진다)
+    /// </summary>
+    private void MoveSlotsToEditArea()
+    {
+        if (editSlotParent == null || slotsMoved || slots == null) return;
+
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] == null) continue;
+
+            RectTransform rt = slots[i].transform as RectTransform;
+            if (rt == null) continue;
+
+            slotHomes[i] = new SlotHome
+            {
+                parent = rt.parent,
+                siblingIndex = rt.GetSiblingIndex(),
+                anchorMin = rt.anchorMin,
+                anchorMax = rt.anchorMax,
+                pivot = rt.pivot,
+                anchoredPosition = rt.anchoredPosition,
+                sizeDelta = rt.sizeDelta,
+                localScale = rt.localScale,
+                addedLayout = null,
+            };
+
+            // worldPositionStays = false. 캔버스 배율이 달라서 월드 좌표를 유지하면 크기가 튄다.
+            rt.SetParent(editSlotParent, false);
+            rt.SetAsLastSibling();
+
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one * editSlotScale;
+
+            ApplyEditSlotSize(rt, ref slotHomes[i]);
+        }
+
+        slotsMoved = true;
+
+        // 레이아웃 그룹은 다음 프레임에 정렬된다. 패널이 나타나는 첫 프레임부터 제자리에 있도록 즉시 한 번 계산시킨다.
+        LayoutRebuilder.ForceRebuildLayoutImmediate(editSlotParent);
+    }
+
+    /// <summary>
+    /// 편집 자리에서의 칸 크기를 정한다. VerticalLayoutGroup 이 크기를 정하는 구조라
+    /// RectTransform 을 직접 건드리는 대신 LayoutElement 로 알려준다.
+    /// 이미 LayoutElement 가 붙어 있으면 그건 슬롯이 원래 갖고 있던 설정이므로 손대지 않는다.
+    /// </summary>
+    private void ApplyEditSlotSize(RectTransform rt, ref SlotHome home)
+    {
+        if (editSlotSize.x <= 0f && editSlotSize.y <= 0f) return;
+        if (rt.GetComponent<LayoutElement>() != null) return;
+
+        LayoutElement le = rt.gameObject.AddComponent<LayoutElement>();
+
+        if (editSlotSize.x > 0f)
+        {
+            le.preferredWidth = editSlotSize.x;
+            le.minWidth = editSlotSize.x;
+        }
+
+        if (editSlotSize.y > 0f)
+        {
+            le.preferredHeight = editSlotSize.y;
+            le.minHeight = editSlotSize.y;
+        }
+
+        home.addedLayout = le;
+    }
+
+    /// <summary>슬롯을 원래 있던 스킬바 자리로 정확히 되돌린다. 옮긴 적이 없으면 아무것도 하지 않는다.</summary>
+    private void RestoreSlotsHome()
+    {
+        if (!slotsMoved || slots == null) return;
+
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] == null) continue;
+
+            RectTransform rt = slots[i].transform as RectTransform;
+            if (rt == null) continue;
+
+            SlotHome home = slotHomes[i];
+
+            // 원래 부모가 씬과 함께 사라졌다면 되돌릴 곳이 없다. 그냥 두고 넘어간다.
+            if (home.parent == null) continue;
+
+            // Destroy 는 프레임 끝에야 실제로 지워진다. 그 사이 한 프레임 동안 스킬바가
+            // 편집용 크기로 벌어지는 걸 막으려고, 먼저 꺼서 레이아웃 계산에서 빼놓는다.
+            if (home.addedLayout != null)
+            {
+                home.addedLayout.enabled = false;
+                Destroy(home.addedLayout);
+            }
+
+            rt.SetParent(home.parent, false);
+            rt.SetSiblingIndex(home.siblingIndex);
+
+            rt.anchorMin = home.anchorMin;
+            rt.anchorMax = home.anchorMax;
+            rt.pivot = home.pivot;
+            rt.anchoredPosition = home.anchoredPosition;
+            rt.sizeDelta = home.sizeDelta;
+            rt.localScale = home.localScale;
+
+            slotHomes[i] = default;
+        }
+
+        slotsMoved = false;
     }
 
     private void Join(CanvasGroup group, RectTransform rect, float alpha, Vector3 scale, float duration)
