@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -96,6 +97,10 @@ public class InventoryUI : MonoBehaviour
     );
 
     [Header("동작")]
+    [Tooltip("켜면 타임라인(컷신)이 재생되는 동안에는 인벤토리를 열 수 없다.\n" +
+             "컷신 중에 열리면 게임이 멈춰서 연출이 그대로 얼어붙는다.")]
+    [SerializeField] private bool blockWhileTimelinePlaying = true;
+
     [Tooltip("열려 있는 동안 게임을 멈춘다. 닫히는 연출이 끝나야 다시 흐른다.")]
     [SerializeField] private bool pauseGame = true;
     [SerializeField] private bool showCursor = true;
@@ -317,10 +322,30 @@ public class InventoryUI : MonoBehaviour
     public void Open()
     {
         if (!ready || IsOpen) return;
+        if (blockWhileTimelinePlaying && IsAnyTimelinePlaying()) return;
+
         IsOpen = true;
 
         if (transition != null) StopCoroutine(transition);
         transition = StartCoroutine(OpenRoutine());
+    }
+
+    /// <summary>
+    /// 지금 재생 중인 타임라인(컷신)이 하나라도 있는지.
+    ///
+    /// 컷신 도중에 인벤토리가 열리면 pauseGame 이 Time.timeScale 을 0으로 만들면서
+    /// 타임라인이 그 자리에서 얼어붙고, 인벤토리를 닫아도 연출이 어긋난 채로 이어진다.
+    ///
+    /// 여는 순간(키 입력)에만 부르므로 매 프레임 도는 비용은 없다.
+    /// </summary>
+    private static bool IsAnyTimelinePlaying()
+    {
+        PlayableDirector[] directors = FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None);
+
+        foreach (PlayableDirector d in directors)
+            if (d != null && d.state == PlayState.Playing) return true;
+
+        return false;
     }
 
     private IEnumerator OpenRoutine()

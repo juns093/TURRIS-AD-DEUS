@@ -245,6 +245,25 @@ public class SkillManager : MonoBehaviour
         RefreshOpenButton();
     }
 
+    /// <summary>
+    /// 편집 화면을 계속 띄워둬도 되는 상황인지.
+    ///
+    /// 스킬 패널은 인벤토리 패널(Desk)의 자식이 아니라 캔버스 바로 밑에 있는 전체화면 UI다.
+    /// 그래서 "부모가 꺼졌으니 나도 꺼졌겠지" 하고 계층만 믿으면 안 된다.
+    /// B / Esc 로 인벤토리를 닫으면 인벤토리만 사라지고 스킬 패널이 화면에 그대로 남는다.
+    /// 인벤토리가 닫혔는지를 직접 물어봐야 한다.
+    /// </summary>
+    private bool IsEditPanelStillValid()
+    {
+        if (editPanelRoot == null) return false;
+        if (!editPanelRoot.activeInHierarchy) return false;
+
+        // 인벤토리가 아예 없는 구성(스킬 화면만 쓰는 씬 등)이면 계층 판정만으로 충분하다.
+        if (InventoryUI.Instance != null && !InventoryUI.Instance.IsOpen) return false;
+
+        return true;
+    }
+
     /// <summary>휴식처가 아닌 씬에서는 스킬 배치로 들어가는 버튼을 아예 감춘다.</summary>
     private void RefreshOpenButton()
     {
@@ -280,9 +299,9 @@ public class SkillManager : MonoBehaviour
 
     private void Update()
     {
-        // 스킬 편집 중에 인벤토리가 통째로 닫히면(패널이 꺼지면) 연출이 중간에 멈춘 채로 남는다.
+        // 스킬 편집 중에 인벤토리가 통째로 닫히면 연출이 중간에 멈춘 채로 남는다.
         // 그대로 두면 다음에 인벤토리를 열었을 때 투명한 채로 나타나므로 즉시 원상복구한다.
-        if (IsEditing && editPanelRoot != null && !editPanelRoot.activeInHierarchy)
+        if (IsEditing && !IsEditPanelStillValid())
             ResetToInventoryInstant();
 
         if (SkillExecutor.Instance == null || slots == null) return;

@@ -88,6 +88,10 @@ public class TimelinePhysicsGuard : MonoBehaviour
     {
         guarding = false;
 
+        // 씬 언로드나 플레이 종료 때는 OnDisable 이 불리는 시점에 이미 Rigidbody 가 파괴돼 있을 수 있다.
+        // FixedUpdate 에는 가드가 있지만 OnDisable 경로에는 없어서 MissingReferenceException 이 났다.
+        if (body == null) return;
+
         // 컷신 동안 어긋나 있던 물리 위치를 실제로 보이는 위치로 데려온다.
         if (syncPositionOnEnd) body.position = body.transform.position;
 

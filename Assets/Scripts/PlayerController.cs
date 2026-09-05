@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 플레이어 이동을 담당.
@@ -23,6 +24,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.15f;
     [SerializeField] private LayerMask groundLayer;
+
+    [Header("사이드뷰 전용 - 낙하 속도 제한")]
+    [Tooltip("떨어질 때 낼 수 있는 최대 속도(유닛/초). 0 이하면 제한 없음.\n\n" +
+             "이게 없으면 오래 떨어질수록 한 물리 스텝에 이동하는 거리가 계속 늘어나서,\n" +
+             "결국 발판 두께보다 더 멀리 건너뛰며 바닥을 통과해버린다.\n" +
+             "중력 29.43 / 50Hz 기준으로 25면 스텝당 0.5유닛, 즉 반 타일이다.")]
+    [SerializeField] private float maxFallSpeed = 25f;
 
     [Header("사이드뷰 전용 - 가변 점프 (누른 시간 = 높이)")]
     [Tooltip("켜면 점프 키를 누르고 있는 시간에 따라 높이가 달라진다.\n" +
@@ -69,6 +77,25 @@ public class PlayerController : MonoBehaviour
 
     [Tooltip("회피 중에만 활성화할 TrailRenderer(잔상). 비워두면 생략됨.")]
     [SerializeField] private TrailRenderer dodgeTrail;
+
+    [Tooltip("켜면 잔상을 플레이어 스프라이트와 같은 정렬 레이어에 두고, 아래 칸수만큼 뒤에 그린다.\n" +
+             "끄면 TrailRenderer 에 직접 설정해둔 값을 그대로 쓴다.")]
+    [SerializeField] private bool trailFollowsPlayerSorting = true;
+
+    [Tooltip("플레이어 스프라이트 기준 정렬 오프셋. 음수면 플레이어 뒤에 그려진다.")]
+    [SerializeField] private int trailSortingOrderOffset = -1;
+
+    [Tooltip("켜면 잔상의 굵기를 플레이어 스프라이트 폭에 맞춰 자동으로 계산한다.\n" +
+             "스프라이트나 플레이어 크기를 바꿔도 잔상이 따로 놀지 않는다.")]
+    [SerializeField] private bool matchTrailWidthToPlayer = true;
+
+    [Tooltip("플레이어 스프라이트 폭 대비 잔상 굵기. 1이면 플레이어 폭과 똑같아진다.")]
+    [Range(0.1f, 2f)] [SerializeField] private float trailWidthRatio = 0.7f;
+
+    [Tooltip("탑뷰에서 잔상 꼬리 길이를 사이드뷰 대비 몇 배로 할지.\n" +
+             "1이면 사이드뷰와 같고, 0.5면 절반 길이가 된다.\n" +
+             "사이드뷰 길이는 TrailRenderer 의 Time 값을 그대로 기준으로 삼는다.")]
+    [Range(0.1f, 1f)] [SerializeField] private float topViewTrailLengthScale = 0.5f;
 
     [Tooltip("회피 방향으로 스프라이트를 기울일 각도(도). 0이면 기울임 없음. 사이드뷰에서만 적용.")]
     [SerializeField] private float dodgeTiltAngle = 12f;
@@ -212,6 +239,14 @@ public class PlayerController : MonoBehaviour
     [Header("옵션")]
     [SerializeField] private Animator animator;
 
+    [Header("뷰 모드별 애니메이터")]
+    [Tooltip("사이드뷰에서 쓸 애니메이터 컨트롤러. 비워두면 시작할 때 Animator 에 꽂혀 있던 것을 그대로 기억해서 쓴다.")]
+    [SerializeField] private RuntimeAnimatorController sideViewAnimator;
+
+    [Tooltip("탑뷰(보스방)에서 쓸 애니메이터 컨트롤러. (PlayerTop)\n" +
+             "비워두면 모드가 바뀌어도 컨트롤러를 갈아끼우지 않는다.")]
+    [SerializeField] private RuntimeAnimatorController topViewAnimator;
+
     public enum FlipMode
     {
         SpriteFlipX,  // SpriteRenderer.flipX 로 뒤집기. 스케일을 건드리지 않아 안전하다.
@@ -232,9 +267,21 @@ public class PlayerController : MonoBehaviour
     // 없는 이름을 SetBool 하면 매 프레임 "Parameter 'X' does not exist" 경고가 쏟아진다.
     private HashSet<string> animatorParams;
 
+    // GameModeManager.OnModeChanged 를 구독해 뒀는지. 매니저가 늦게 생기는 씬이 있어서 필요하다.
+    private bool modeBound;
+
+    // 인스펙터에 세팅돼 있던 잔상 길이(사이드뷰 기준). 탑뷰에서는 여기에 배율만 곱해서 쓴다.
+    private float baseTrailTime = -1f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        // 인스펙터에서 사이드뷰 컨트롤러를 안 꽂아뒀으면, 지금 Animator 에 들어있는 것이 곧 사이드뷰용이다.
+        // 탑뷰에 갔다가 돌아올 때 이 값으로 되돌린다.
+        if (sideViewAnimator == null && animator != null)
+            sideViewAnimator = animator.runtimeAnimatorController;
+
         CacheAnimatorParameters();
 
         if (playerState == null) playerState = GetComponent<global::PlayerState>();
@@ -245,28 +292,140 @@ public class PlayerController : MonoBehaviour
         sideViewGravityScale = rb.gravityScale; // 인스펙터에 세팅해둔 사이드뷰용 중력값을 기억
 
         if (dodgeTrail != null)
+        {
             dodgeTrail.emitting = false; // 시작할 땐 꺼둔 상태로
+
+            // 인스펙터에 세팅해둔 Time 이 곧 사이드뷰 기준 길이다.
+            // 탑뷰에서 줄여 쓴 값이 다음 Awake 에서 기준으로 굳어버리지 않게 여기서 한 번만 기억한다.
+            baseTrailTime = dodgeTrail.time;
+        }
+
+        ApplyTrailAppearance();
+    }
+
+    /// <summary>
+    /// 대시 잔상을 플레이어에 맞춰 정리한다. 정렬 순서와 굵기 두 가지다.
+    ///
+    /// 정렬: TrailRenderer 는 기본 Sorting Order 가 0 이라, 플레이어 스프라이트의 Order 를
+    /// 씬마다 손대다 보면 잔상이 캐릭터 위로 올라와 얼굴을 덮는다.
+    /// 씬에 박아둔 숫자를 믿지 말고, 매번 플레이어 기준으로 다시 계산해서 뒤에 깔아준다.
+    ///
+    /// 굵기: TrailRenderer 의 폭은 처음부터 월드 단위이고, 자기 Transform 의 스케일과는 무관하다.
+    /// (스케일로 나누면 굵기가 그 배수만큼 부풀어서 거대한 부채꼴이 된다)
+    /// 그래서 커브 최대값만 나눠주면 된다. widthMultiplier * 커브최대값 = 화면에 보이는 월드 굵기.
+    /// </summary>
+    private void ApplyTrailAppearance()
+    {
+        if (dodgeTrail == null) return;
+
+        // 꼬리 길이는 뷰 모드마다 다르게. 탑뷰는 화면이 넓어서 같은 길이도 훨씬 길게 보인다.
+        if (baseTrailTime > 0f)
+        {
+            bool isTop = GameModeManager.Instance != null && GameModeManager.Instance.IsTopView;
+            dodgeTrail.time = isTop ? baseTrailTime * topViewTrailLengthScale : baseTrailTime;
+        }
+
+        if (sprite == null) return;
+
+        if (trailFollowsPlayerSorting)
+        {
+            dodgeTrail.sortingLayerID = sprite.sortingLayerID;
+            dodgeTrail.sortingOrder = sprite.sortingOrder + trailSortingOrderOffset;
+        }
+
+        if (!matchTrailWidthToPlayer) return;
+
+        float targetWorldWidth = sprite.bounds.size.x * trailWidthRatio;
+        if (targetWorldWidth <= 0f) return;
+
+        // 커브 최대값이 곧 "가장 두꺼운 지점"이다. 이걸 기준으로 맞춰야 머리 쪽 굵기가 의도대로 나온다.
+        float peak = 0f;
+        foreach (Keyframe k in dodgeTrail.widthCurve.keys)
+            peak = Mathf.Max(peak, k.value);
+
+        if (peak < 0.0001f) return;
+
+        dodgeTrail.widthMultiplier = targetWorldWidth / peak;
     }
 
     private void OnEnable()
     {
-        if (GameModeManager.Instance != null)
-        {
-            GameModeManager.Instance.OnModeChanged += HandleModeChanged;
-            ApplyGravityForMode(GameModeManager.Instance.CurrentMode);
-        }
+        TryBindGameMode();
+        SceneManager.sceneLoaded += HandleSceneLoaded;
     }
 
     private void OnDisable()
     {
-        if (GameModeManager.Instance != null)
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+
+        if (modeBound && GameModeManager.Instance != null)
             GameModeManager.Instance.OnModeChanged -= HandleModeChanged;
+
+        modeBound = false;
+    }
+
+    /// <summary>
+    /// 플레이어는 PersistentPlayer 로 씬을 넘어 살아남으므로 Awake 가 한 번밖에 돌지 않는다.
+    /// 그래서 씬 시작 걷기 연출(useAutoRunIntro)의 기준 시계를 여기서 직접 되감아야
+    /// 새 씬에 들어갈 때마다 다시 "걷다가 달리기"로 시작한다.
+    /// </summary>
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        sceneTimer = 0f;
+    }
+
+    /// <summary>
+    /// GameModeManager 를 구독하고 지금 모드를 즉시 반영한다.
+    ///
+    /// OnEnable 때는 매니저가 아직 없을 수 있다. SceneEntryManager 가 Start 에서
+    /// 만들어주는 경우가 그렇다. (OnEnable 은 Start 보다 훨씬 먼저 돈다)
+    /// 그때 그냥 넘어가면 영영 구독을 못 해서, 탑뷰로 바뀌어도 중력과 애니메이터가 그대로 남는다.
+    /// 그래서 붙을 때까지 매 프레임 다시 시도한다.
+    ///
+    /// 구독 시점에 현재 모드를 한 번 적용하는 것도 중요하다.
+    /// 우리가 구독하기 전에 이미 OnModeChanged 가 지나갔을 수 있기 때문이다.
+    /// </summary>
+    private void TryBindGameMode()
+    {
+        if (modeBound || GameModeManager.Instance == null) return;
+
+        GameModeManager.Instance.OnModeChanged += HandleModeChanged;
+        modeBound = true;
+
+        ApplyGravityForMode(GameModeManager.Instance.CurrentMode);
+        ApplyAnimatorForMode(GameModeManager.Instance.CurrentMode);
     }
 
     private void HandleModeChanged(GameModeManager.GameMode prev, GameModeManager.GameMode next)
     {
         ApplyGravityForMode(next);
+        ApplyAnimatorForMode(next);
         ResetPhysicsState();
+    }
+
+    /// <summary>
+    /// 뷰 모드에 맞는 애니메이터 컨트롤러로 갈아끼운다.
+    /// 사이드뷰(Player)와 탑뷰(PlayerTop)는 스테이트도 파라미터도 아예 달라서,
+    /// 하나의 컨트롤러에 다 넣는 대신 통째로 바꿔 끼우는 편이 훨씬 단순하다.
+    ///
+    /// 갈아끼운 뒤에는 반드시 파라미터 목록을 다시 읽어야 한다.
+    /// 그러지 않으면 예전 컨트롤러 기준으로 캐시된 이름에 SetBool 을 하다가
+    /// "Parameter 'X' does not exist" 경고가 매 프레임 쏟아진다.
+    /// </summary>
+    private void ApplyAnimatorForMode(GameModeManager.GameMode mode)
+    {
+        if (animator == null) return;
+
+        RuntimeAnimatorController target = mode == GameModeManager.GameMode.TopView
+            ? topViewAnimator
+            : sideViewAnimator;
+
+        // 탑뷰 컨트롤러를 안 꽂아둔 경우 등. 그냥 지금 것을 계속 쓴다.
+        if (target == null) return;
+        if (animator.runtimeAnimatorController == target) return;
+
+        animator.runtimeAnimatorController = target;
+        CacheAnimatorParameters();
     }
 
     /// <summary>탑뷰에서는 중력을 꺼서 위/아래로도 자유롭게 움직이게 한다.</summary>
@@ -321,6 +480,9 @@ public class PlayerController : MonoBehaviour
         bool consumeJump = jumpRequested;
         jumpRequested = false;
 
+        // 매니저가 늦게 생기는 씬(SceneEntryManager 가 Start 에서 만들어주는 경우)을 여기서 붙잡는다.
+        TryBindGameMode();
+
         if (GameModeManager.Instance == null) return;
 
         bool isSide = GameModeManager.Instance.IsSideView;
@@ -343,6 +505,11 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private bool IsRunning()
     {
+        bool isSide = GameModeManager.Instance == null || GameModeManager.Instance.IsSideView;
+
+        // 탑뷰(PlayerTop)에는 걷기 스테이트 자체가 없다. 씬 시작 걷기 연출도 없이 바로 달린다.
+        if (!isSide) return useAutoRunIntro || Input.GetKey(runKey);
+
         if (useAutoRunIntro)
             return sceneTimer >= walkDurationBeforeRun;
 
@@ -413,6 +580,7 @@ public class PlayerController : MonoBehaviour
         }
 
         ApplyJumpCut();
+        ClampFallSpeed();
 
         FlipSprite();
 
@@ -538,6 +706,27 @@ public class PlayerController : MonoBehaviour
         SetAnimTrigger(wallGrabTrigger);
     }
 
+    /// <summary>
+    /// 낙하 속도에 상한을 건다. 긴 낙하 구간에서 바닥을 뚫고 지나가는 것을 막는 핵심 장치다.
+    ///
+    /// 물리 엔진은 한 스텝(기본 0.02초)마다 "현재 속도 x 스텝"만큼 순간이동시킨 뒤 겹침을 검사한다.
+    /// 그래서 속도가 계속 붙으면 어느 순간 한 스텝에 발판 두께를 통째로 건너뛰어버리고,
+    /// 겹친 적이 없으니 충돌도 일어나지 않는다. (Collider 를 아무리 깔아도 소용없는 이유)
+    ///
+    /// Rigidbody2D 의 Continuous 충돌 검사와 같이 쓰면 확실하다.
+    /// 이쪽은 애초에 그 상황을 안 만들고, 저쪽은 만들어져도 잡아준다.
+    /// </summary>
+    private void ClampFallSpeed()
+    {
+        if (maxFallSpeed <= 0f) return;
+
+        Vector2 v = rb.linearVelocity;
+        if (v.y >= -maxFallSpeed) return; // 올라가는 중이거나 아직 느리면 그대로 둔다
+
+        v.y = -maxFallSpeed;
+        rb.linearVelocity = v;
+    }
+
     private void EndWallCling()
     {
         isWallClinging = false;
@@ -649,9 +838,12 @@ public class PlayerController : MonoBehaviour
         }
 
         if (dodgeTrail != null)
+        {
+            // 대시가 시작되는 지금이 "지금 화면에 보이는 스프라이트"가 확정된 시점이다.
+            // 탑뷰와 사이드뷰는 스프라이트 크기가 달라서, 여기서 다시 맞춰야 두 뷰 모두 자연스럽다.
+            ApplyTrailAppearance();
             dodgeTrail.emitting = true;
-
-     
+        }
 
         if (audioSource != null && dodgeSfx != null)
             audioSource.PlayOneShot(dodgeSfx);
@@ -785,7 +977,12 @@ public class PlayerController : MonoBehaviour
 
         bool isRunningSide = isSide && isGrounded && !isDodging && running
             && Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0f;
-        SetAnimBool("isRunning", isRunningSide);
+
+        // 탑뷰(PlayerTop 컨트롤러)에는 Idle / Run 두 개뿐이고 그걸 isRunning 하나로 가른다.
+        // 걷기·달리기 구분이 없으므로 방향 입력이 들어와 실제로 움직이는 중이면 Run 으로 본다.
+        bool isMovingTop = !isSide && moving && !isDodging;
+
+        SetAnimBool("isRunning", isRunningSide || isMovingTop);
 
         bool isDodgingSide = isSide && isDodging;
         SetAnimBool("isDodging", isDodgingSide);

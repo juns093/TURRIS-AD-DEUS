@@ -55,6 +55,15 @@ public class PlayerFootsteps : MonoBehaviour
     [Tooltip("달리기 애니메이션 스테이트 이름.")]
     [SerializeField] private string runStateName = "PlayerRun";
 
+    [Tooltip("탑뷰(보스방)에서의 달리기 스테이트 이름.\n" +
+             "탑뷰는 애니메이터 컨트롤러(PlayerTop)가 통째로 달라서 스테이트 이름도 다르다.\n" +
+             "탑뷰에는 걷기 스테이트가 없으므로 이것 하나로 걷기·달리기를 같이 본다.")]
+    [SerializeField] private string topViewRunStateName = "PlayerTopRun";
+
+    [Tooltip("탑뷰 달리기 클립의 발 착지 지점. 클립 길이가 사이드뷰와 달라서 따로 둔다.\n" +
+             "비워두면 위의 Footfall Phases 를 그대로 쓴다.")]
+    [SerializeField] private float[] topViewFootfallPhases = new float[] { 0f, 0.5f };
+
     [SerializeField] private int animatorLayer = 0;
 
     [Tooltip("한 사이클(0~1) 안에서 발이 땅에 닿는 지점. 다리가 2개니까 기본 2개.\n" +
@@ -148,7 +157,13 @@ public class PlayerFootsteps : MonoBehaviour
     {
         if (!syncToAnimation) return false;
         if (animator == null || animator.runtimeAnimatorController == null) return false;
-        if (footfallPhases == null || footfallPhases.Length == 0) return false;
+
+        // 뷰 모드마다 애니메이터 컨트롤러가 다르므로 스테이트 이름과 착지 지점도 갈아끼운다.
+        bool isSide = GameModeManager.Instance == null || GameModeManager.Instance.IsSideView;
+
+        float[] phases = isSide ? footfallPhases : topViewFootfallPhases;
+        if (phases == null || phases.Length == 0) phases = footfallPhases;
+        if (phases == null || phases.Length == 0) return false;
 
         // 전환 중에는 재생 위치가 불안정하므로 이번 프레임은 그냥 쉰다.
         if (animator.IsInTransition(animatorLayer))
@@ -159,8 +174,13 @@ public class PlayerFootsteps : MonoBehaviour
 
         AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(animatorLayer);
 
-        bool isRunState = !string.IsNullOrEmpty(runStateName) && st.IsName(runStateName);
-        bool isWalkState = !string.IsNullOrEmpty(walkStateName) && st.IsName(walkStateName);
+        // 탑뷰에는 Idle / Run 두 개뿐이라 걷기 스테이트가 없다. 달리기 하나로만 본다.
+        bool isRunState = isSide
+            ? !string.IsNullOrEmpty(runStateName) && st.IsName(runStateName)
+            : !string.IsNullOrEmpty(topViewRunStateName) && st.IsName(topViewRunStateName);
+
+        bool isWalkState = isSide && !string.IsNullOrEmpty(walkStateName) && st.IsName(walkStateName);
+
         if (!isRunState && !isWalkState) return false; // 걷기/달리기 스테이트가 아니면 폴백에 맡긴다
 
         float nt = st.normalizedTime;
@@ -174,9 +194,9 @@ public class PlayerFootsteps : MonoBehaviour
             return true;
         }
 
-        for (int i = 0; i < footfallPhases.Length; i++)
+        for (int i = 0; i < phases.Length; i++)
         {
-            float phase = Mathf.Repeat(footfallPhases[i], 1f);
+            float phase = Mathf.Repeat(phases[i], 1f);
 
             if (Mathf.Floor(nt - phase) > Mathf.Floor(prevNormalizedTime - phase))
             {

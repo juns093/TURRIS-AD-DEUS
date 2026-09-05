@@ -22,14 +22,8 @@ public class SceneEntryManager : MonoBehaviour
 
     private void Start()
     {
-        if (GameModeManager.Instance != null)
-        {
-            GameModeManager.Instance.SetMode(modeForThisScene);
-        }
-        else
-        {
-            Debug.LogWarning("GameModeManager 인스턴스가 없습니다. 씬에 GameModeManager를 배치했는지 확인하세요.");
-        }
+        EnsureGameModeManager();
+        GameModeManager.Instance.SetMode(modeForThisScene);
 
         var playerObj = GameObject.FindGameObjectWithTag(playerTag);
         if (playerObj == null)
@@ -66,10 +60,39 @@ public class SceneEntryManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// GameModeManager 가 아직 없으면 여기서 만든다.
+    ///
+    /// 원래는 tutorialScene 에 놓인 것 하나가 DontDestroyOnLoad 로 따라다니는 구조였다.
+    /// 그래서 에디터에서 BossRoom1 이나 RestScene 을 직접 열고 Play 하면 매니저가 없고,
+    /// PlayerController.FixedUpdate 가 맨 첫 줄에서 return 해버려서 플레이어가 아예 안 움직였다.
+    ///
+    /// 씬마다 하나씩 놓는 대신 없을 때만 만들어주면, 어느 씬에서 Play 를 눌러도 똑같이 동작한다.
+    /// (만들어진 것도 DontDestroyOnLoad 라 이후 씬으로 그대로 따라간다)
+    /// </summary>
+    private void EnsureGameModeManager()
+    {
+        if (GameModeManager.Instance != null) return;
+
+        new GameObject("GameModeManager (auto)").AddComponent<GameModeManager>();
+        Debug.Log("[SceneEntryManager] GameModeManager 가 없어서 하나 만들었습니다.", this);
+    }
+
     private void PlacePlayerAtSpawn(GameObject playerObj)
     {
         if (string.IsNullOrEmpty(PendingSpawn.SpawnPointId))
-            return; // 처음 게임을 시작한 씬이라 넘어온 스폰 정보가 없는 경우 등
+        {
+            // 넘어온 스폰 정보가 없는 경우.
+            // 플레이어가 씬을 넘어 살아남게 되면서, 그냥 두면 이전 씬의 좌표를 그대로 들고 와서
+            // 맵 밖에 떨어진다. 이 씬에 원래 놓여 있던(중복이라 지워진) 플레이어 자리로 데려간다.
+            Vector3? home = PersistentPlayer.ConsumeSceneSpawnHint();
+            if (home.HasValue)
+            {
+                playerObj.transform.position = home.Value;
+                playerObj.GetComponent<PlayerController>()?.ResetPhysicsState();
+            }
+            return;
+        }
 
         var spawnPoints = FindObjectsOfType<PlayerSpawnPoint>();
         PlayerSpawnPoint target = null;
@@ -85,6 +108,14 @@ public class SceneEntryManager : MonoBehaviour
         if (target == null)
         {
             Debug.LogWarning($"스폰포인트 id '{PendingSpawn.SpawnPointId}'를 이 씬에서 찾을 수 없습니다.");
+
+            // 못 찾았다고 이전 씬 좌표에 그대로 두면 맵 밖이다. 씬에 놓여 있던 자리로라도 데려간다.
+            Vector3? home = PersistentPlayer.ConsumeSceneSpawnHint();
+            if (home.HasValue)
+            {
+                playerObj.transform.position = home.Value;
+                playerObj.GetComponent<PlayerController>()?.ResetPhysicsState();
+            }
         }
         else
         {

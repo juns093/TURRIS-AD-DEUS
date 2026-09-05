@@ -21,8 +21,28 @@ public class CameraDashEffect : MonoBehaviour
     [Tooltip("returnDampingX를 유지하는 시간(초). 이후 전부 평상시 값으로 리셋됨")]
     [SerializeField] private float returnDampingDuration = 0.35f;
 
+    [Header("탑뷰 - 세로축")]
+    [Tooltip("탑뷰에서는 위/아래로도 대시하므로 세로축에도 똑같은 연출을 적용한다.\n" +
+             "값은 위의 가로축 설정을 그대로 재사용하므로 따로 맞출 필요가 없다.\n" +
+             "사이드뷰에서는 점프 카메라와 싸우게 되므로 쓰지 않는다.")]
+    [SerializeField] private bool applyToVerticalInTopView = true;
+
     private CinemachinePositionComposer composer;
     private Coroutine returnRoutine;
+
+    // 세로축의 "평상시" 값은 인스펙터에 또 적지 않고, 씬에 세팅돼 있던 값을 그대로 기억해서 되돌린다.
+    // 씬마다 탑뷰 카메라 세팅이 다를 수 있는데 여기에 하나로 박아두면 그걸 덮어써 버린다.
+    private float authoredDeadZoneHeight;
+    private float authoredDampingY;
+
+    // 세로축을 실제로 건드렸는지. 건드리지도 않았는데 되돌리면 씬 세팅이 망가진다.
+    private bool verticalTouched;
+
+    /// <summary>지금 세로축까지 연출할 상황인지. (탑뷰일 때만)</summary>
+    private bool UseVertical =>
+        applyToVerticalInTopView
+        && GameModeManager.Instance != null
+        && GameModeManager.Instance.IsTopView;
 
     private void Awake()
     {
@@ -46,6 +66,15 @@ public class CameraDashEffect : MonoBehaviour
         }
 
         composer = newComposer;
+        verticalTouched = false;
+
+        // 이 씬 카메라에 세팅돼 있던 세로축 값을 원본으로 기억해둔다.
+        if (composer != null)
+        {
+            authoredDeadZoneHeight = composer.Composition.DeadZone.Size.y;
+            authoredDampingY = composer.Damping.y;
+        }
+
         ResetToNormal();
     }
 
@@ -63,10 +92,19 @@ public class CameraDashEffect : MonoBehaviour
         // OnDashStart()
         var dz = composer.Composition.DeadZone;
         dz.Size.x = dashDeadZoneWidth; // dz.x → dz.Size.x
-        composer.Composition.DeadZone = dz;
 
         var damping = composer.Damping;
         damping.x = normalDampingX; // 대시 중엔 평상시 댐핑 유지 (데드존만 넓힘)
+
+        // 탑뷰는 위아래로도 대시하므로 세로축에도 똑같이 걸어준다.
+        if (UseVertical)
+        {
+            dz.Size.y = dashDeadZoneWidth;  // 가로축과 같은 값
+            damping.y = normalDampingX;
+            verticalTouched = true;
+        }
+
+        composer.Composition.DeadZone = dz;
         composer.Damping = damping;
     }
 
@@ -84,9 +122,12 @@ public class CameraDashEffect : MonoBehaviour
     private IEnumerator ReturnRoutine()
     {
         var startDeadZoneWidth = composer.Composition.DeadZone.Size.x;
+        var startDeadZoneHeight = composer.Composition.DeadZone.Size.y;
+        bool vertical = verticalTouched;
 
         var initialDamping = composer.Damping;
         initialDamping.x = returnDampingX;
+        if (vertical) initialDamping.y = returnDampingX;
         composer.Damping = initialDamping;
 
         float elapsed = 0f;
@@ -105,7 +146,6 @@ public class CameraDashEffect : MonoBehaviour
                 normalDeadZoneWidth,
                 t
             );
-            composer.Composition.DeadZone = dz;
 
             var damping = composer.Damping;
             damping.x = Mathf.Lerp(
@@ -113,6 +153,14 @@ public class CameraDashEffect : MonoBehaviour
                 normalDampingX,
                 t
             );
+
+            if (vertical)
+            {
+                dz.Size.y = Mathf.Lerp(startDeadZoneHeight, authoredDeadZoneHeight, t);
+                damping.y = Mathf.Lerp(returnDampingX, authoredDampingY, t);
+            }
+
+            composer.Composition.DeadZone = dz;
             composer.Damping = damping;
 
             yield return null;
@@ -129,10 +177,19 @@ public class CameraDashEffect : MonoBehaviour
         // ResetToNormal()
         var dz = composer.Composition.DeadZone;
         dz.Size.x = normalDeadZoneWidth; // dz.x → dz.Size.x
-        composer.Composition.DeadZone = dz;
 
         var damping = composer.Damping;
         damping.x = normalDampingX;
+
+        // 세로축은 우리가 건드린 경우에만 되돌린다. 그것도 씬에 원래 있던 값으로.
+        if (verticalTouched)
+        {
+            dz.Size.y = authoredDeadZoneHeight;
+            damping.y = authoredDampingY;
+            verticalTouched = false;
+        }
+
+        composer.Composition.DeadZone = dz;
         composer.Damping = damping;
     }
 }

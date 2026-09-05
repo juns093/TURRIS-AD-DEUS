@@ -44,11 +44,20 @@ public class PlayerEffects : MonoBehaviour
     [Tooltip("달리기 애니메이션 스테이트 이름. Animator 창에서 보이는 이름 그대로.")]
     [SerializeField] private string runStateName = "PlayerRun";
 
+    [Tooltip("탑뷰(보스방)에서의 달리기 스테이트 이름.\n" +
+             "탑뷰는 애니메이터 컨트롤러(PlayerTop)가 통째로 달라서 스테이트 이름도 다르다.\n" +
+             "비워두면 탑뷰에서는 싱크를 쓰지 않고 아래 고정 간격으로 넘어간다.")]
+    [SerializeField] private string topViewRunStateName = "PlayerTopRun";
+
     [SerializeField] private int animatorLayer = 0;
 
     [Tooltip("한 사이클(0~1) 안에서 발이 땅에 닿는 지점. 다리가 2개니까 기본 2개.\n" +
              "PlayerRun 클립은 10프레임이므로 '착지 프레임 번호 / 10' 이 그 값이다. (예: 2번, 7번 프레임 -> 0.2, 0.7)")]
     [SerializeField] private float[] footfallPhases = new float[] { 0f, 0.5f };
+
+    [Tooltip("탑뷰 달리기 클립의 발 착지 지점. 클립 길이가 사이드뷰와 달라서(10프레임 vs 8프레임) 따로 둔다.\n" +
+             "비워두면 위의 Footfall Phases 를 그대로 쓴다.")]
+    [SerializeField] private float[] topViewFootfallPhases = new float[] { 0f, 0.5f };
 
     [Tooltip("두 번째 발(반대쪽 다리)에만 더해줄 위치 보정. 두 발이 완전히 같은 자리에 찍히는 걸 막는다.")]
     [SerializeField] private Vector2 secondFootOffset = new Vector2(0.06f, 0f);
@@ -60,8 +69,12 @@ public class PlayerEffects : MonoBehaviour
     [Tooltip("Animator가 없거나 달리기 스테이트가 아닐 때 쓰는 고정 간격(초).")]
     [SerializeField] private float runDustInterval = 0.16f;
 
-    [Tooltip("켜면 사이드뷰에서 바닥에 닿아있을 때만 만든다. 탑뷰에서는 이 옵션과 무관하게 항상 만든다.")]
+    [Tooltip("켜면 사이드뷰에서 바닥에 닿아있을 때만 만든다. 탑뷰에서는 이 옵션과 무관하다.")]
     [SerializeField] private bool runDustNeedsGrounded = true;
+
+    [Tooltip("탑뷰(보스방)에서도 발 먼지를 만들지.\n" +
+             "먼지 스프라이트는 옆에서 본 그림이라 탑뷰에서는 방향이 맞지 않아 어색하다. 기본은 꺼둔다.")]
+    [SerializeField] private bool runDustInTopView = false;
 
     [Tooltip("동시에 떠 있을 수 있는 먼지 최대 개수. 넘으면 새로 만들지 않고 건너뛴다.")]
     [SerializeField] private int maxActiveRunDust = 12;
@@ -160,7 +173,16 @@ public class PlayerEffects : MonoBehaviour
     {
         if (!syncToAnimation) return false;
         if (animator == null || animator.runtimeAnimatorController == null) return false;
-        if (footfallPhases == null || footfallPhases.Length == 0) return false;
+
+        // 뷰 모드마다 애니메이터 컨트롤러가 다르므로 스테이트 이름과 착지 지점도 갈아끼운다.
+        bool isSide = GameModeManager.Instance == null || GameModeManager.Instance.IsSideView;
+
+        string stateName = isSide ? runStateName : topViewRunStateName;
+        if (string.IsNullOrEmpty(stateName)) return false;
+
+        float[] phases = isSide ? footfallPhases : topViewFootfallPhases;
+        if (phases == null || phases.Length == 0) phases = footfallPhases;
+        if (phases == null || phases.Length == 0) return false;
 
         // 전환 중에는 재생 위치가 불안정하므로 이번 프레임은 그냥 쉰다.
         if (animator.IsInTransition(animatorLayer))
@@ -170,7 +192,7 @@ public class PlayerEffects : MonoBehaviour
         }
 
         AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(animatorLayer);
-        if (!st.IsName(runStateName)) return false; // 달리기 스테이트가 아니면 폴백에 맡긴다
+        if (!st.IsName(stateName)) return false; // 달리기 스테이트가 아니면 폴백에 맡긴다
 
         float nt = st.normalizedTime;
 
@@ -182,9 +204,9 @@ public class PlayerEffects : MonoBehaviour
             return true;
         }
 
-        for (int i = 0; i < footfallPhases.Length; i++)
+        for (int i = 0; i < phases.Length; i++)
         {
-            float phase = Mathf.Repeat(footfallPhases[i], 1f);
+            float phase = Mathf.Repeat(phases[i], 1f);
 
             if (Mathf.Floor(nt - phase) > Mathf.Floor(prevNormalizedTime - phase))
             {
@@ -218,7 +240,9 @@ public class PlayerEffects : MonoBehaviour
         if (!pc.IsRunningState || !pc.IsMoving || pc.IsDodging) return false;
 
         bool isSide = GameModeManager.Instance != null && GameModeManager.Instance.IsSideView;
-        if (isSide && runDustNeedsGrounded && !pc.IsGrounded) return false;
+
+        if (!isSide) return runDustInTopView;
+        if (runDustNeedsGrounded && !pc.IsGrounded) return false;
 
         return true;
     }

@@ -239,6 +239,7 @@ GameObject:
   - component: {fileID: 8079678303902229752}
   - component: {fileID: 7681171571351225023}
   - component: {fileID: 1128803906619758085}
+  - component: {fileID: 6640088997427586352}
   m_Layer: 0
   m_Name: Player_Side
   m_TagString: Player
@@ -348,7 +349,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!70 &1421013396582999761
 CapsuleCollider2D:
@@ -407,6 +408,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  maxFallSpeed: 25
   variableJumpHeight: 1
   jumpCutMultiplier: 0.4
   dodgeSpeed: 14
@@ -451,6 +453,11 @@ MonoBehaviour:
   sprite: {fileID: 6597952066483063240}
   dodgeAlpha: 0.5
   dodgeTrail: {fileID: 6296604615253218142}
+  trailFollowsPlayerSorting: 1
+  trailSortingOrderOffset: -1
+  matchTrailWidthToPlayer: 1
+  trailWidthRatio: 0.7
+  topViewTrailLengthScale: 0.5
   dodgeTiltAngle: 0
   audioSource: {fileID: 0}
   dodgeSfx: {fileID: 0}
@@ -479,6 +486,8 @@ MonoBehaviour:
   wallJumpTrigger: WallJump
   flipMode: 0
   animator: {fileID: 8079678303902229752}
+  sideViewAnimator: {fileID: 9100000, guid: e4165b2aaa160a74299f0da546195c24, type: 2}
+  topViewAnimator: {fileID: 9100000, guid: c0158e52ef62b0b49be8b67d0abe25eb, type: 2}
 --- !u!114 &1242739792909591961
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -493,7 +502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerState
   maxStamina: 100
   regenPerSecond: 20
-  regenDelay: 0.5
+  regenDelay: 2.5
   maxHP: 100
   currentHP: 100
 --- !u!95 &8079678303902229752
@@ -539,14 +548,19 @@ MonoBehaviour:
   syncToAnimation: 1
   animator: {fileID: 8079678303902229752}
   runStateName: PlayerRun
+  topViewRunStateName: PlayerTopRun
   animatorLayer: 0
   footfallPhases:
+  - 0
+  - 0.5
+  topViewFootfallPhases:
   - 0
   - 0.5
   secondFootOffset: {x: 0.06, y: 0}
   logFootfall: 0
   runDustInterval: 0.5
   runDustNeedsGrounded: 1
+  runDustInTopView: 0
   maxActiveRunDust: 12
   sortingOrderOffset: -1
   prewarmCount: 6
@@ -569,6 +583,18 @@ MonoBehaviour:
   startingItems: []
   autoEquipStartingGear: 1
   autoEquipOnPickup: 1
+--- !u!114 &6640088997427586352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2346203140237265819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0532dacf569f524cb091d05f2962817, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PersistentPlayer
 --- !u!1 &3526574068852392952
 GameObject:
   m_ObjectHideFlags: 0
@@ -648,13 +674,13 @@ TrailRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 9
   m_MaskInteraction: 0
   m_Time: 0.28
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 3
+    widthMultiplier: 1.55
     widthCurve:
       serializedVersion: 2
       m_Curve:
