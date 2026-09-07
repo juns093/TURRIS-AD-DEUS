@@ -9,10 +9,10 @@ public enum ItemType
 }
 
 /// <summary>
-/// 아이템 원본 데이터. Project 창에서 우클릭 → Create → Nibo → Item 으로 만든다.
+/// 아이템 원본 데이터. Project 창에서 우클릭 → Create → TurrisAdDeus → Item 으로 만든다.
 /// 런타임에 실제로 들고 다니는 건 ItemData 가 아니라 ItemInstance(개수/위치를 가진 사본)다.
 /// </summary>
-[CreateAssetMenu(fileName = "NewItem", menuName = "Nibo/Item", order = 0)]
+[CreateAssetMenu(fileName = "NewItem", menuName = "TurrisAdDeus/Item", order = 0)]
 public class ItemData : ScriptableObject
 {
     [Header("기본")]

@@ -31,7 +31,7 @@ public class BackgroundFitToCamera : MonoBehaviour
     [Header("얼마나 덮을지")]
     [Tooltip("카메라 가시 범위보다 이 비율만큼 더 크게 만든다.\n" +
              "1.1 이면 10% 여유. 카메라가 흔들리거나 살짝 앞서 나갈 때 가장자리가 비지 않게 해준다.")]
-    [Range(1f, 2f)] [SerializeField] private float coverMargin = 1.15f;
+    [Range(1f, 3f)] [SerializeField] private float coverMargin = 1.15f;
 
     [Tooltip("가로를 화면에 맞출지. 울트라와이드 대응은 이쪽이다.")]
     [SerializeField] private bool fitWidth = true;

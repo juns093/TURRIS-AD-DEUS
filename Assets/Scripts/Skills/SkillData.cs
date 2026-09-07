@@ -10,11 +10,11 @@ public enum SkillType
 }
 
 /// <summary>
-/// 스킬 원본 데이터. Project 창에서 우클릭 → Create → Nibo → Skill 로 만든다.
+/// 스킬 원본 데이터. Project 창에서 우클릭 → Create → TurrisAdDeus → Skill 로 만든다.
 /// ItemData 와 마찬가지로 이 자체가 "장착 상태"를 갖지 않는다.
 /// 어느 슬롯에 배정됐는지는 SkillManager 가 skillID 기준으로 따로 저장한다.
 /// </summary>
-[CreateAssetMenu(fileName = "NewSkill", menuName = "Nibo/Skill", order = 1)]
+[CreateAssetMenu(fileName = "NewSkill", menuName = "TurrisAdDeus/Skill", order = 1)]
 public class SkillData : ScriptableObject
 {
     [Header("기본")]

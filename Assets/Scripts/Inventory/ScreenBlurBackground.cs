@@ -11,7 +11,7 @@ using UnityEngine.UI;
 public class ScreenBlurBackground : MonoBehaviour
 {
     [Header("블러")]
-    [Tooltip("Nibo/UIBlur 셰이더로 만든 머티리얼. 비워두면 Shader.Find 로 찾고, 그것도 실패하면 다운샘플만으로 흐리게 한다.")]
+    [Tooltip("TurrisAdDeus/UIBlur 셰이더로 만든 머티리얼. 비워두면 Shader.Find 로 찾고, 그것도 실패하면 다운샘플만으로 흐리게 한다.")]
     [SerializeField] private Material blurMaterial;
 
     [Tooltip("해상도를 1/N 로 줄여서 블러한다. 클수록 더 흐리고 더 싸다.")]
@@ -47,7 +47,7 @@ public class ScreenBlurBackground : MonoBehaviour
 
         if (blurMaterial == null)
         {
-            Shader s = Shader.Find("Nibo/UIBlur");
+            Shader s = Shader.Find("TurrisAdDeus/UIBlur");
             if (s != null) blurMaterial = new Material(s) { hideFlags = HideFlags.HideAndDontSave };
         }
     }

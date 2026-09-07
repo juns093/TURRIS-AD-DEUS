@@ -884,6 +884,7 @@ GameObject:
   - component: {fileID: 203334955}
   - component: {fileID: 203334954}
   - component: {fileID: 203334957}
+  - component: {fileID: 203334958}
   m_Layer: 3
   m_Name: Ground
   m_TagString: Untagged
@@ -8253,6 +8254,25 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 7
+--- !u!251 &203334958
+PlatformEffector2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203334952}
+  m_Enabled: 1
+  m_UseColliderMask: 1
+  m_ColliderMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RotationalOffset: 0
+  m_UseOneWay: 1
+  m_UseOneWayGrouping: 0
+  m_SurfaceArc: 180
+  m_UseSideFriction: 0
+  m_UseSideBounce: 0
+  m_SideArc: 1
 --- !u!1 &232576455
 GameObject:
   m_ObjectHideFlags: 0
@@ -9708,7 +9728,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundFitToCamera
   targetCamera: {fileID: 0}
-  coverMargin: 1.5
+  coverMargin: 2
   fitWidth: 1
   fitHeight: 1
   neverShrink: 1
@@ -10237,7 +10257,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 7.5
+  orthographic size: 6.1875
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -13687,7 +13707,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundFitToCamera
   targetCamera: {fileID: 0}
-  coverMargin: 1.5
+  coverMargin: 2
   fitWidth: 1
   fitHeight: 1
   neverShrink: 1
@@ -67188,7 +67208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundFitToCamera
   targetCamera: {fileID: 0}
-  coverMargin: 1.5
+  coverMargin: 2
   fitWidth: 1
   fitHeight: 1
   neverShrink: 1

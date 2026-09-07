@@ -26,7 +26,7 @@ public class SkillManager : MonoBehaviour
     [SerializeField] private bool persistAcrossScenes = true;
 
     [Header("스킬 데이터")]
-    [Tooltip("스킬 목록에 나열할 전체 스킬. Project 에서 Nibo/Skill 로 만든 에셋을 끌어다 놓는다.")]
+    [Tooltip("스킬 목록에 나열할 전체 스킬. Project 에서 TurrisAdDeus/Skill 로 만든 에셋을 끌어다 놓는다.")]
     [SerializeField] private List<SkillData> allSkills = new List<SkillData>();
 
     [Header("연결 · 스킬 목록")]

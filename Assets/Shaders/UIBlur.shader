@@ -1,6 +1,6 @@
 // 인벤토리 배경용 Kawase 블러. Graphics.Blit 으로 여러 번 통과시켜 흐림 정도를 올린다.
 // URP에서도 그냥 언릿 블릿 셰이더라 문제없이 동작한다.
-Shader "Nibo/UIBlur"
+Shader "TurrisAdDeus/UIBlur"
 {
     Properties
     {
