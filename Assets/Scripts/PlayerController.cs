@@ -984,8 +984,10 @@ public class PlayerController : MonoBehaviour
 
         SetAnimBool("isRunning", isRunningSide || isMovingTop);
 
-        bool isDodgingSide = isSide && isDodging;
-        SetAnimBool("isDodging", isDodgingSide);
+        // 회피는 양쪽 뷰에 모두 있고, 컨트롤러도 각자 대시 스테이트를 갖고 있다.
+        // (사이드뷰 PlayerDash / 탑뷰 PlayerDashTop)
+        // 예전처럼 isSide 를 곱해버리면 탑뷰에서는 영영 false 라 대시 애니메이션이 나오지 않는다.
+        SetAnimBool("isDodging", isDodging);
 
         SetAnimBool(wallClingBool, isSide && isWallClinging);
     }
